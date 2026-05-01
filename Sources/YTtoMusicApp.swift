@@ -4,6 +4,7 @@ import SwiftUI
 struct YTtoMusicApp: App {
     @StateObject private var downloader = DownloadManager()
     @StateObject private var fileDownloader = FileDownloadManager()
+    @StateObject private var playlistManager = PlaylistDownloadManager()
     @StateObject private var history = HistoryStore()
     @StateObject private var settings = AppSettings()
     @StateObject private var updater = YtDlpUpdater()
@@ -13,6 +14,7 @@ struct YTtoMusicApp: App {
             ContentView()
                 .environmentObject(downloader)
                 .environmentObject(fileDownloader)
+                .environmentObject(playlistManager)
                 .environmentObject(history)
                 .environmentObject(settings)
                 .environmentObject(updater)
@@ -32,6 +34,10 @@ struct YTtoMusicApp: App {
                     NotificationCenter.default.post(name: .newFileDownload, object: nil)
                 }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
+                Button("プレイリスト → アルバム") {
+                    NotificationCenter.default.post(name: .newPlaylist, object: nil)
+                }
+                .keyboardShortcut("n", modifiers: [.command, .option])
             }
             CommandGroup(after: .pasteboard) {
                 Button("URL をペーストして開始") {
@@ -51,5 +57,6 @@ struct YTtoMusicApp: App {
 extension Notification.Name {
     static let newDownload = Notification.Name("YTtoMusic.newDownload")
     static let newFileDownload = Notification.Name("YTtoMusic.newFileDownload")
+    static let newPlaylist = Notification.Name("YTtoMusic.newPlaylist")
     static let pasteAndStart = Notification.Name("YTtoMusic.pasteAndStart")
 }

@@ -171,9 +171,19 @@ enum FileDownloadState: Equatable {
     case error(String)
 }
 
+enum PlaylistDownloadState: Equatable {
+    case idle
+    case fetching
+    case downloading(current: Int, total: Int, currentTitle: String, currentProgress: Double)
+    case finished(succeeded: Int, failed: [String])
+    case cancelled(succeeded: Int, total: Int)
+    case error(String)
+}
+
 enum SidebarSelection: Hashable {
     case appleMusicDownload
     case fileDownload
+    case playlistDownload
     case history(UUID)
 }
 

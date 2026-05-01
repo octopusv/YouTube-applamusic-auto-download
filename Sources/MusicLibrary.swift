@@ -22,7 +22,10 @@ enum MusicLibrary {
         thumbnail: String?,
         title: String,
         artist: String,
-        album: String
+        album: String,
+        albumArtist: String? = nil,
+        trackNumber: Int? = nil,
+        totalTracks: Int? = nil
     ) throws -> URL {
         guard let ffmpeg = Tools.ffmpeg else { throw MusicLibraryError.ffmpegMissing }
         guard FileManager.default.fileExists(atPath: AppPaths.autoAddFolder.path) else {
@@ -48,13 +51,21 @@ enum MusicLibrary {
             args += ["-c", "copy", "-id3v2_version", "3"]
         }
 
+        let resolvedAlbumArtist = albumArtist ?? artist
         args += [
             "-metadata", "title=\(title)",
             "-metadata", "artist=\(artist)",
             "-metadata", "album=\(album)",
-            "-metadata", "album_artist=\(artist)",
-            tempOut.path
+            "-metadata", "album_artist=\(resolvedAlbumArtist)"
         ]
+
+        if let trackNumber, let totalTracks {
+            args += ["-metadata", "track=\(trackNumber)/\(totalTracks)"]
+        } else if let trackNumber {
+            args += ["-metadata", "track=\(trackNumber)"]
+        }
+
+        args.append(tempOut.path)
 
         let p = Process()
         p.executableURL = URL(fileURLWithPath: ffmpeg)
@@ -71,8 +82,13 @@ enum MusicLibrary {
             throw MusicLibraryError.ffmpegFailed(String(msg.suffix(300)))
         }
 
-        let safeName = sanitize("\(artist) - \(title)")
-        let dest = AppPaths.autoAddFolder.appendingPathComponent("\(safeName).mp3")
+        let baseName: String
+        if let n = trackNumber {
+            baseName = sanitize(String(format: "%02d - %@ - %@", n, artist, title))
+        } else {
+            baseName = sanitize("\(artist) - \(title)")
+        }
+        let dest = AppPaths.autoAddFolder.appendingPathComponent("\(baseName).mp3")
         try? FileManager.default.removeItem(at: dest)
         try FileManager.default.moveItem(at: tempOut, to: dest)
         return dest

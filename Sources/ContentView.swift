@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var downloader: DownloadManager
     @EnvironmentObject var fileDownloader: FileDownloadManager
+    @EnvironmentObject var playlistManager: PlaylistDownloadManager
     @EnvironmentObject var history: HistoryStore
     @EnvironmentObject var updater: YtDlpUpdater
     @State private var selection: SidebarSelection? = .appleMusicDownload
@@ -43,6 +44,13 @@ struct ContentView: View {
             default: break
             }
         }
+        .onChange(of: playlistManager.state) { _, newValue in
+            switch newValue {
+            case .fetching, .downloading, .finished, .cancelled, .error:
+                selection = .playlistDownload
+            default: break
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .newDownload)) { _ in
             selection = .appleMusicDownload
             downloader.reset()
@@ -50,6 +58,10 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .newFileDownload)) { _ in
             selection = .fileDownload
             fileDownloader.reset()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .newPlaylist)) { _ in
+            selection = .playlistDownload
+            playlistManager.reset()
         }
     }
 
@@ -60,6 +72,8 @@ struct ContentView: View {
             NewDownloadView(selection: $selection)
         case .some(.fileDownload):
             FileDownloadView(selection: $selection)
+        case .some(.playlistDownload):
+            PlaylistView(selection: $selection)
         case .some(.history(let id)):
             if let item = history.item(id: id) {
                 HistoryDetailView(item: item, selection: $selection)

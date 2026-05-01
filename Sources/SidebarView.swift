@@ -22,6 +22,14 @@ struct SidebarView: View {
                         .foregroundStyle(.blue)
                 }
                 .tag(SidebarSelection.fileDownload)
+
+                Label {
+                    Text("プレイリスト → アルバム")
+                } icon: {
+                    Image(systemName: "rectangle.stack.fill")
+                        .foregroundStyle(.purple)
+                }
+                .tag(SidebarSelection.playlistDownload)
             }
 
             ForEach(history.grouped, id: \.group) { group in
