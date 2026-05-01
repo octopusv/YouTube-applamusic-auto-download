@@ -81,7 +81,7 @@ build_dmg() {
     sleep 1
   fi
 
-  hdiutil attach "$TMP_DMG" -mountpoint "$MOUNT_DIR" -nobrowse -noautoopen -quiet
+  hdiutil attach "$TMP_DMG" -mountpoint "$MOUNT_DIR" -noautoopen -quiet
 
   # アイテム認識待ち
   for _ in 1 2 3 4 5 6 7 8 9 10; do
@@ -92,29 +92,27 @@ build_dmg() {
   done
   sleep 1
 
-  /usr/bin/osascript <<APPLESCRIPT >/dev/null 2>&1 || true
+  /usr/bin/osascript <<'APPLESCRIPT' || true
 tell application "Finder"
+  activate
   tell disk "YTtoMusic"
+    open
+    delay 2
     set current view of container window to icon view
     set toolbar visible of container window to false
     set statusbar visible of container window to false
-    set sidebar width of container window to 0
-    set the bounds of container window to {200, 120, 760, 480}
+    set the bounds of container window to {300, 180, 860, 540}
     set viewOptions to the icon view options of container window
     set arrangement of viewOptions to not arranged
     set icon size of viewOptions to 128
-    set text size of viewOptions to 12
-    delay 0.5
-    try
-      set position of item "YTtoMusic.app" of container window to {150, 180}
-    end try
-    try
-      set position of item "Applications" of container window to {410, 180}
-    end try
-    delay 0.5
+    set text size of viewOptions to 13
+    delay 1
+    set position of item "YTtoMusic.app" of container window to {150, 180}
+    set position of item "Applications" of container window to {410, 180}
+    delay 1
     update without registering applications
-    delay 0.5
-    close container window
+    delay 2
+    close
   end tell
 end tell
 APPLESCRIPT
