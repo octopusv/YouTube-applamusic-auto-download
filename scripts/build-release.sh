@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # YTtoMusic リリースビルドスクリプト
-# 必要なもの: Xcode, xcodegen
+# 必要なもの: Xcode, xcodegen, create-dmg (DMG 化する場合)
 #
 # 使い方:
-#   ./scripts/build-release.sh              ビルドのみ
-#   ./scripts/build-release.sh --zip        .app を zip 化
-#   ./scripts/build-release.sh --release v0.1.0   GitHub Release 作成
+#   ./scripts/build-release.sh                    ビルドのみ
+#   ./scripts/build-release.sh --dmg              .app を DMG 化
+#   ./scripts/build-release.sh --release v0.1.0   DMG を GitHub Release 作成
 
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
@@ -48,13 +48,55 @@ du -sh "$APP"
 # 隔離属性を外す（自分の Mac で右クリック開きが不要になる）
 xattr -cr "$APP" 2>/dev/null || true
 
-ZIP="$ROOT/build/YTtoMusic.zip"
+DMG="$ROOT/build/YTtoMusic.dmg"
 
-if [[ "${1:-}" == "--zip" || "${1:-}" == "--release" ]]; then
-  echo "==> Zip 化"
-  rm -f "$ZIP"
-  ditto -c -k --keepParent "$APP" "$ZIP"
-  echo "Zip: $ZIP ($(du -sh "$ZIP" | cut -f1))"
+build_dmg() {
+  if ! command -v create-dmg >/dev/null 2>&1; then
+    echo "create-dmg が必要です。brew install create-dmg を実行してください。"
+    exit 1
+  fi
+  echo "==> DMG 化"
+  rm -f "$DMG"
+
+  # ステージング領域に .app だけ置く
+  STAGE="$ROOT/build/dmg-stage"
+  rm -rf "$STAGE"
+  mkdir -p "$STAGE"
+  cp -R "$APP" "$STAGE/"
+
+  # アイコンファイル（DMG の Volume Icon に流用）
+  ICON_PNG="$ROOT/Sources/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
+  ICON_ARG=()
+  if [[ -f "$ICON_PNG" ]]; then
+    ICON_ARG=(--volicon "$ICON_PNG")
+  fi
+
+  create-dmg \
+    --volname "YTtoMusic" \
+    "${ICON_ARG[@]}" \
+    --window-pos 200 120 \
+    --window-size 560 360 \
+    --icon-size 128 \
+    --icon "YTtoMusic.app" 150 170 \
+    --hide-extension "YTtoMusic.app" \
+    --app-drop-link 410 170 \
+    --no-internet-enable \
+    "$DMG" \
+    "$STAGE/" \
+    || true  # create-dmg は SLA がない時に exit 2 を返すことがあるため握る
+
+  rm -rf "$STAGE"
+
+  if [[ ! -f "$DMG" ]]; then
+    echo "DMG 生成に失敗しました"
+    exit 1
+  fi
+
+  echo "DMG: $DMG ($(du -sh "$DMG" | cut -f1))"
+}
+
+if [[ "${1:-}" == "--dmg" || "${1:-}" == "--release" ]]; then
+  build_dmg
 fi
 
 if [[ "${1:-}" == "--release" ]]; then
@@ -68,14 +110,14 @@ if [[ "${1:-}" == "--release" ]]; then
     exit 1
   fi
   echo "==> GitHub Release 作成: $TAG"
-  gh release create "$TAG" "$ZIP" \
+  gh release create "$TAG" "$DMG" \
     --title "$TAG" \
     --notes "macOS 用 YTtoMusic.app
 
 ## インストール
-1. YTtoMusic.zip を展開
-2. YTtoMusic.app を /Applications にドラッグ
-3. 初回起動は右クリック → 開く（署名なしのため）
+1. \`YTtoMusic.dmg\` をダウンロードしてダブルクリック
+2. 表示されるウィンドウで YTtoMusic.app を Applications フォルダにドラッグ
+3. 初回起動は右クリック → 開く（署名なしのため Gatekeeper 警告が出る）
 
 ## 必要環境
 - macOS 14+
