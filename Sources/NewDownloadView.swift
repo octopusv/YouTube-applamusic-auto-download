@@ -66,9 +66,12 @@ struct NewDownloadView: View {
             }
             .id("saved")
         case .error(let msg):
-            ErrorView(message: msg) {
+            ErrorView(message: msg, onReset: {
                 downloader.reset()
-            }
+            }, onRetry: {
+                downloader.reset()
+                start()
+            })
             .id("error")
         }
     }

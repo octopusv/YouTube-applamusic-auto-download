@@ -39,7 +39,12 @@ struct PlaylistView: View {
         case .cancelled(let succeeded, let total):
             cancelledView(succeeded: succeeded, total: total)
         case .error(let msg):
-            ErrorView(message: msg) { manager.reset() }
+            ErrorView(message: msg, onReset: {
+                manager.reset()
+            }, onRetry: {
+                manager.reset()
+                start()
+            })
         }
     }
 
