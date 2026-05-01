@@ -4,10 +4,21 @@ YouTube から音声を抽出して、Apple Music ライブラリに自動追加
 
 Mac で URL を貼って ⌘↩︎、メタデータを編集して「Apple Music に追加」を押すだけ。iCloud Music Library 経由で iPhone のミュージック.app にも自動で同期される。
 
+## ダウンロード
+
+ビルド済みの `.app` は [Releases](https://github.com/octopusv/YouTube-applamusic-auto-download/releases) から取得できます。
+
+1. `YTtoMusic.zip` をダウンロード・展開
+2. `YTtoMusic.app` を `/Applications` にドラッグ
+3. 初回起動は **右クリック → 開く**（署名なしのため Gatekeeper の警告が出る）
+4. 別途 `brew install yt-dlp ffmpeg` が必要
+
+自分でビルドしたい場合は下の「セットアップ」へ。
+
 ## 必要なもの
 
 - macOS 14 (Sonoma) 以降
-- Xcode 15 以降
+- Xcode 15 以降（自分でビルドする場合）
 - Apple Music の契約（iCloud Music Library 経由で同期するため）
 - Homebrew
 
@@ -25,22 +36,35 @@ brew install yt-dlp ffmpeg
 - iPhone: 設定 → ミュージック → 「ライブラリを同期」を **ON**
 - Mac と iPhone で同じ Apple ID にサインインしていること
 
-### 3. Xcode プロジェクトを作る
+### 3. ビルド
 
-1. Xcode → File → New → Project → **macOS → App**
-2. Product Name: `YTtoMusic` / Interface: **SwiftUI** / Language: **Swift**
-3. Deployment Target を **macOS 14.0** 以上に設定
-4. 自動生成された `YTtoMusicApp.swift` と `ContentView.swift` を削除
-5. このリポジトリの `Sources/` 内の `.swift` ファイルすべてを Xcode のプロジェクトナビゲータにドラッグ
-   - "Copy items if needed" にチェック
-   - ターゲット `YTtoMusic` を選択
-6. プロジェクト設定 → **Signing & Capabilities → App Sandbox を削除**
-   - 理由: `yt-dlp` / `ffmpeg` の起動と `~/Music/...` への書き込みが必要なため
-   - 個人利用で配布しないので無効で問題なし
+#### A. ワンコマンド（推奨）
 
-### 4. ビルド
+```bash
+brew install xcodegen
+./scripts/build-release.sh --zip
+```
+
+`build/Build/Products/Release/YTtoMusic.app` と `build/YTtoMusic.zip` ができる。
+GitHub Release まで一気に作るなら:
+
+```bash
+./scripts/build-release.sh --release v0.1.0
+```
+
+（`gh` CLI が必要 → `brew install gh && gh auth login`）
+
+#### B. Xcode で開く
+
+```bash
+brew install xcodegen
+xcodegen generate
+open YTtoMusic.xcodeproj
+```
 
 ⌘R で実行。
+
+> `YTtoMusic.xcodeproj` は `xcodegen` で `project.yml` から生成される自動成果物。リポジトリには含まれない（`.gitignore` 済み）。
 
 ## 使い方
 
