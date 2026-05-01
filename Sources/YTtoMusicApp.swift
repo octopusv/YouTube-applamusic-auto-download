@@ -6,6 +6,7 @@ struct YTtoMusicApp: App {
     @StateObject private var fileDownloader = FileDownloadManager()
     @StateObject private var history = HistoryStore()
     @StateObject private var settings = AppSettings()
+    @StateObject private var updater = YtDlpUpdater()
 
     var body: some Scene {
         Window("YT to Music", id: "main") {
@@ -14,7 +15,9 @@ struct YTtoMusicApp: App {
                 .environmentObject(fileDownloader)
                 .environmentObject(history)
                 .environmentObject(settings)
+                .environmentObject(updater)
                 .frame(minWidth: 880, minHeight: 580)
+                .task { updater.checkOnLaunch() }
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))

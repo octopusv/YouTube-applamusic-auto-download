@@ -4,15 +4,30 @@ struct ContentView: View {
     @EnvironmentObject var downloader: DownloadManager
     @EnvironmentObject var fileDownloader: FileDownloadManager
     @EnvironmentObject var history: HistoryStore
+    @EnvironmentObject var updater: YtDlpUpdater
     @State private var selection: SidebarSelection? = .appleMusicDownload
+
+    private var bannerKey: String {
+        switch updater.state {
+        case .unknown, .checking, .current: return "hidden"
+        case .available: return "available"
+        case .updating: return "updating"
+        case .justUpdated: return "done"
+        case .failed: return "failed"
+        }
+    }
 
     var body: some View {
         NavigationSplitView {
             SidebarView(selection: $selection)
                 .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 360)
         } detail: {
-            detailContent
-                .navigationSplitViewColumnWidth(min: 560, ideal: 760)
+            VStack(spacing: 0) {
+                UpdateBanner()
+                    .animation(.smooth(duration: 0.25), value: bannerKey)
+                detailContent
+            }
+            .navigationSplitViewColumnWidth(min: 560, ideal: 760)
         }
         .onChange(of: downloader.state) { _, newValue in
             switch newValue {
