@@ -4,6 +4,7 @@ struct HistoryDetailView: View {
     let item: HistoryItem
     @EnvironmentObject var history: HistoryStore
     @Binding var selection: SidebarSelection?
+    @State private var showEditor = false
 
     var body: some View {
         ScrollView {
@@ -18,11 +19,23 @@ struct HistoryDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toolbar { toolbarContent }
+        .sheet(isPresented: $showEditor) {
+            EditExistingView(item: item, history: history) {
+                showEditor = false
+            }
+        }
     }
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
+            Button {
+                showEditor = true
+            } label: {
+                Label("編集", systemImage: "pencil")
+            }
+            .help("メタデータとアートワークを編集")
+
             switch item.kind {
             case .appleMusic:
                 Button {

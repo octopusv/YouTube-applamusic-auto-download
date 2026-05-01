@@ -40,6 +40,16 @@ final class HistoryStore: ObservableObject {
         save()
     }
 
+    func update(_ updated: HistoryItem) {
+        guard let idx = items.firstIndex(where: { $0.id == updated.id }) else { return }
+        let old = items[idx]
+        if let oldThumb = old.thumbnailPath, oldThumb != updated.thumbnailPath {
+            try? FileManager.default.removeItem(atPath: oldThumb)
+        }
+        items[idx] = updated
+        save()
+    }
+
     func item(id: UUID) -> HistoryItem? {
         items.first { $0.id == id }
     }

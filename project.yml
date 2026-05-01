@@ -13,8 +13,8 @@ packages:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.5.2"
-    CURRENT_PROJECT_VERSION: "7"
+    MARKETING_VERSION: "0.6.0"
+    CURRENT_PROJECT_VERSION: "8"
     PRODUCT_NAME: YTtoMusic
     GENERATE_INFOPLIST_FILE: YES
     DEVELOPMENT_TEAM: ""
@@ -47,3 +47,4 @@ targets:
         SUPublicEDKey: "oFaP9K2hsmtyFxar41bz6oeJ0J1aoTL2mriFBRmfcyk="
         SUEnableAutomaticChecks: true
         SUEnableInstallerLauncherService: true
+        NSAppleEventsUsageDescription: "ミュージックライブラリの曲情報（タイトル・アーティスト・アルバム・アートワーク）を編集するために、ミュージック.app を操作します。"
