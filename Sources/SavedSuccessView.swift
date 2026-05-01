@@ -10,6 +10,10 @@ struct SavedSuccessView: View {
     @State private var ringScale: CGFloat = 0.6
     @State private var ringOpacity: Double = 0
 
+    @State private var syncing = false
+    @State private var syncResult: String?
+    @State private var syncFailed = false
+
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
@@ -45,11 +49,17 @@ struct SavedSuccessView: View {
                     } label: {
                         Label("ミュージックを開く", systemImage: "music.note")
                     }
-                    Button {
-                        try? MusicLibrary.refreshCloudLibrary()
-                    } label: {
-                        Label("クラウド同期を実行", systemImage: "arrow.triangle.2.circlepath.icloud")
+                    Button(action: triggerCloudSync) {
+                        if syncing {
+                            HStack(spacing: 6) {
+                                ProgressView().controlSize(.small)
+                                Text("同期中…")
+                            }
+                        } else {
+                            Label("クラウド同期を実行", systemImage: "arrow.triangle.2.circlepath.icloud")
+                        }
                     }
+                    .disabled(syncing)
                     .help("ミュージック.app の「クラウドミュージックライブラリを更新」を叩いて iPhone への反映を早める")
                     Button("履歴で表示", action: onShowInSidebar)
                     Button {
@@ -61,6 +71,13 @@ struct SavedSuccessView: View {
                     .keyboardShortcut(.defaultAction)
                 }
                 .controlSize(.large)
+
+                if let syncResult {
+                    Label(syncResult, systemImage: syncFailed ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(syncFailed ? .red : .green)
+                        .padding(.top, 2)
+                }
             }
             .frame(maxWidth: 540)
             .card()
@@ -91,6 +108,31 @@ struct SavedSuccessView: View {
                 .foregroundStyle(.white)
                 .scaleEffect(checkScale)
                 .opacity(checkOpacity)
+        }
+    }
+
+    private func triggerCloudSync() {
+        syncing = true
+        syncResult = nil
+        syncFailed = false
+        Task.detached(priority: .userInitiated) {
+            do {
+                try MusicLibrary.refreshCloudLibrary()
+                await MainActor.run {
+                    syncing = false
+                    syncResult = "ミュージック.app に同期コマンドを送信しました"
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 4_000_000_000)
+                        syncResult = nil
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    syncing = false
+                    syncFailed = true
+                    syncResult = "失敗: \(error.localizedDescription)"
+                }
+            }
         }
     }
 
