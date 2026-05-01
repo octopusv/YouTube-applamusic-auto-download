@@ -104,26 +104,53 @@ enum MusicLibrary {
         }
     }
 
-    /// 「ファイル → ライブラリ → クラウドミュージックライブラリを更新」を UI スクリプトで叩く。
+    /// 「ファイル → ライブラリ → クラウドライブラリをアップデート」を UI スクリプトで叩く。
     /// 初回は System Events への Automation 権限ダイアログが出る。
     /// 失敗時は throw、成功時は何も返さない（Music.app 側で進捗が表示される）。
     static func refreshCloudLibrary() throws {
-        let script = """
+        let script = #"""
         tell application "Music" to activate
         delay 0.4
         tell application "System Events"
             tell process "Music"
-                set fileMenu to (first menu bar item of menu bar 1 whose name is in {"File", "ファイル"})
+                -- ファイル メニュー
+                set fileMenu to missing value
+                try
+                    set fileMenu to menu bar item "ファイル" of menu bar 1
+                end try
+                if fileMenu is missing value then
+                    set fileMenu to menu bar item "File" of menu bar 1
+                end if
                 click fileMenu
                 delay 0.2
-                set libraryItem to (first menu item of menu of fileMenu whose name is in {"Library", "ライブラリ"})
+
+                -- ライブラリ サブメニュー
+                set libraryItem to missing value
+                try
+                    set libraryItem to menu item "ライブラリ" of menu 1 of fileMenu
+                end try
+                if libraryItem is missing value then
+                    set libraryItem to menu item "Library" of menu 1 of fileMenu
+                end if
                 click libraryItem
                 delay 0.2
-                set updateItem to (first menu item of menu of libraryItem whose name is in {"Update Cloud Library", "Update iCloud Music Library", "クラウドミュージックライブラリを更新", "iCloud ミュージックライブラリを更新"})
+
+                -- クラウドライブラリをアップデート
+                set candidates to {"クラウドライブラリをアップデート", "クラウドミュージックライブラリを更新", "iCloud ミュージックライブラリを更新", "Update Cloud Library", "Update iCloud Music Library"}
+                set updateItem to missing value
+                repeat with c in candidates
+                    try
+                        set updateItem to menu item (c as string) of menu 1 of libraryItem
+                        exit repeat
+                    end try
+                end repeat
+                if updateItem is missing value then
+                    error "クラウドライブラリ更新メニューが見つかりません"
+                end if
                 click updateItem
             end tell
         end tell
-        """
+        """#
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         p.arguments = ["-e", script]

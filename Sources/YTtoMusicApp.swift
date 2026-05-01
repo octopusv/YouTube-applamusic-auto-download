@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 @main
 struct YTtoMusicApp: App {
@@ -57,7 +58,15 @@ struct YTtoMusicApp: App {
             }
             CommandMenu("ミュージック") {
                 Button("クラウドミュージックライブラリを更新") {
-                    try? MusicLibrary.refreshCloudLibrary()
+                    do {
+                        try MusicLibrary.refreshCloudLibrary()
+                    } catch {
+                        let alert = NSAlert()
+                        alert.messageText = "クラウドライブラリの更新に失敗しました"
+                        alert.informativeText = error.localizedDescription
+                        alert.alertStyle = .warning
+                        alert.runModal()
+                    }
                 }
                 .keyboardShortcut("r", modifiers: [.command, .shift])
                 Button("ミュージック.app を開く") {
