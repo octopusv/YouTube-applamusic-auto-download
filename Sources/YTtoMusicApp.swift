@@ -20,7 +20,10 @@ struct YTtoMusicApp: App {
                 .environmentObject(settings)
                 .environmentObject(updater)
                 .frame(minWidth: 880, minHeight: 580)
-                .task { updater.checkOnLaunch() }
+                .task {
+                    updater.checkOnLaunch()
+                    Task.detached { TempCleanup.sweepStaleSessions() }
+                }
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))

@@ -167,6 +167,14 @@ final class DownloadManager: ObservableObject {
         state = .ready(meta)
     }
 
+    func cancel() {
+        process?.terminate()
+        process = nil
+        state = .idle
+        preview = nil
+        stderrBuffer = ""
+    }
+
     func reset() {
         state = .idle
         preview = nil

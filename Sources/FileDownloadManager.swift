@@ -170,6 +170,13 @@ final class FileDownloadManager: ObservableObject {
         state = .saved(item)
     }
 
+    func cancel() {
+        process?.terminate()
+        process = nil
+        state = .idle
+        stderrBuffer = ""
+    }
+
     func reset() {
         state = .idle
         stderrBuffer = ""
