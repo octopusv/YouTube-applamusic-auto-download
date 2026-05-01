@@ -41,15 +41,13 @@ struct NewDownloadView: View {
             EmptyDropZoneView(url: $url, urlFocused: $urlFocused, onStart: start)
                 .id("idle")
         case .working(let stage, let status):
-            VStack(spacing: 14) {
-                DownloadProgressView(stage: stage, status: status, preview: downloader.preview, url: url)
-                Button(role: .destructive) {
-                    downloader.cancel()
-                } label: {
-                    Label("キャンセル", systemImage: "xmark.circle.fill")
-                }
-                .controlSize(.regular)
-            }
+            DownloadProgressView(
+                stage: stage,
+                status: status,
+                preview: downloader.preview,
+                url: url,
+                onCancel: { downloader.cancel() }
+            )
             .id("working")
         case .ready(let meta):
             EditorView(metadata: meta) { result in

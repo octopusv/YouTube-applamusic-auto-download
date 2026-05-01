@@ -34,15 +34,13 @@ struct FileDownloadView: View {
         case .idle:
             idleView
         case .working(let stage, let status):
-            VStack(spacing: 14) {
-                DownloadProgressView(stage: stage, status: status, preview: nil, url: url)
-                Button(role: .destructive) {
-                    downloader.cancel()
-                } label: {
-                    Label("キャンセル", systemImage: "xmark.circle.fill")
-                }
-                .controlSize(.regular)
-            }
+            DownloadProgressView(
+                stage: stage,
+                status: status,
+                preview: nil,
+                url: url,
+                onCancel: { downloader.cancel() }
+            )
             .id("file-working")
         case .saved(let item):
             FileSavedView(item: item) {

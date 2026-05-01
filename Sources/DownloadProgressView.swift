@@ -5,6 +5,7 @@ struct DownloadProgressView: View {
     let status: String
     let preview: PreviewMetadata?
     let url: String
+    var onCancel: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,6 +15,15 @@ struct DownloadProgressView: View {
                 artwork
                 titleSection
                 progressSection
+                if let onCancel {
+                    HStack {
+                        Spacer()
+                        Button(role: .destructive, action: onCancel) {
+                            Label("キャンセル", systemImage: "xmark.circle.fill")
+                        }
+                        .controlSize(.regular)
+                    }
+                }
             }
             .frame(maxWidth: 540)
             .card()
