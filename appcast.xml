@@ -65,5 +65,17 @@
                 sparkle:edSignature="PFcsrVZgdyLI3ragjLB/mZZfXpIv4I/evM9SOK+qNFxEfo9biuNpeWv3GrNHcQVL7GxweV7SaQ7jT0BxWZKyDQ==" length="3543277"
                 type="application/octet-stream"/>
         </item>
+        <item>
+            <title>v0.7.0</title>
+            <pubDate>Fri, 01 May 2026 05:27:03 +0000</pubDate>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:releaseNotesLink>https://github.com/octopusv/YouTube-applamusic-auto-download/releases/tag/v0.7.0</sparkle:releaseNotesLink>
+            <enclosure
+                url="https://github.com/octopusv/YouTube-applamusic-auto-download/releases/download/v0.7.0/YTtoMusic.dmg"
+                sparkle:version="11"
+                sparkle:shortVersionString="0.7.0"
+                sparkle:edSignature="xqbSipDMRvuTxGo4PVkqPVy0DyPVE6Fg97vLs9RwYgplcDSfI283irgYgJpISl33gdQeJNjFvhhpNOErPMkXAw==" length="3545794"
+                type="application/octet-stream"/>
+        </item>
     </channel>
 </rss>
