@@ -12,7 +12,7 @@
             <sparkle:releaseNotesLink>https://github.com/octopusv/YouTube-applamusic-auto-download/releases/tag/v0.5.0</sparkle:releaseNotesLink>
             <enclosure
                 url="https://github.com/octopusv/YouTube-applamusic-auto-download/releases/download/v0.5.0/YTtoMusic.dmg"
-                sparkle:version="0.5.0"
+                sparkle:version="5"
                 sparkle:shortVersionString="0.5.0"
                 sparkle:edSignature="l929tokPPICUC72t94O/Qgut2qnX/csA0XBcc7TWRc4arLC8bTAHseMfhQAEtQ/0EemCnMkQB8Pm2onAQMrJDA==" length="3473758"
                 type="application/octet-stream"/>
@@ -24,7 +24,7 @@
             <sparkle:releaseNotesLink>https://github.com/octopusv/YouTube-applamusic-auto-download/releases/tag/v0.5.1</sparkle:releaseNotesLink>
             <enclosure
                 url="https://github.com/octopusv/YouTube-applamusic-auto-download/releases/download/v0.5.1/YTtoMusic.dmg"
-                sparkle:version="0.5.1"
+                sparkle:version="6"
                 sparkle:shortVersionString="0.5.1"
                 sparkle:edSignature="BhlKIsE6XT2T7xbot8xOPQFsjxdZQU/TeUOy+FEQh7pjPWj3Zrt4gtT7N83DtePTm3ik2jEd7WcxyGEPe3m/Bg==" length="3490027"
                 type="application/octet-stream"/>

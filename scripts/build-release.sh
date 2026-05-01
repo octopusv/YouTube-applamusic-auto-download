@@ -179,8 +179,17 @@ ensure_sparkle_tools() {
 
 update_appcast() {
   local tag="$1"
-  local version="${tag#v}"
+  local short_version="${tag#v}"
   ensure_sparkle_tools
+
+  # Sparkle の sparkle:version はビルド番号 (CFBundleVersion) を比較に使う。
+  # マーケティング版を入れると "5" vs "0.5.1" のような誤判定になる。
+  local build_version
+  build_version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Contents/Info.plist")
+  if [[ -z "$build_version" ]]; then
+    echo "CFBundleVersion の取得に失敗"
+    exit 1
+  fi
 
   echo "==> DMG を Ed25519 署名"
   local sigline
@@ -207,8 +216,8 @@ update_appcast() {
             <sparkle:releaseNotesLink>$notes_url</sparkle:releaseNotesLink>
             <enclosure
                 url="$dmg_url"
-                sparkle:version="$version"
-                sparkle:shortVersionString="$version"
+                sparkle:version="$build_version"
+                sparkle:shortVersionString="$short_version"
                 $sigline
                 type="application/octet-stream"/>
         </item>
