@@ -7,6 +7,7 @@ final class AppSettings: ObservableObject {
         static let folder = "defaultDownloadFolder"
         static let format = "defaultFormat"
         static let rememberLastFormat = "rememberLastFormat"
+        static let cookieBrowser = "cookieBrowser"
     }
 
     @Published var defaultFolder: URL {
@@ -17,6 +18,9 @@ final class AppSettings: ObservableObject {
     }
     @Published var rememberLastFormat: Bool {
         didSet { UserDefaults.standard.set(rememberLastFormat, forKey: Keys.rememberLastFormat) }
+    }
+    @Published var cookieBrowser: CookieBrowser {
+        didSet { UserDefaults.standard.set(cookieBrowser.rawValue, forKey: Keys.cookieBrowser) }
     }
 
     init() {
@@ -36,5 +40,8 @@ final class AppSettings: ObservableObject {
         } else {
             self.rememberLastFormat = UserDefaults.standard.bool(forKey: Keys.rememberLastFormat)
         }
+
+        let cookieRaw = UserDefaults.standard.string(forKey: Keys.cookieBrowser) ?? CookieBrowser.none.rawValue
+        self.cookieBrowser = CookieBrowser(rawValue: cookieRaw) ?? .none
     }
 }

@@ -34,6 +34,20 @@ struct SettingsView: View {
                 }
                 Toggle("最後に使ったフォーマットを記憶", isOn: $settings.rememberLastFormat)
             }
+
+            Section {
+                Picker("ブラウザの Cookie を使う", selection: $settings.cookieBrowser) {
+                    ForEach(CookieBrowser.allCases) { b in
+                        Text(b.displayName).tag(b)
+                    }
+                }
+            } header: {
+                Text("YouTube 認証")
+            } footer: {
+                Text("「Sign in to confirm you're not a bot」エラーが出る場合、ログイン中のブラウザを選んでください。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
     }

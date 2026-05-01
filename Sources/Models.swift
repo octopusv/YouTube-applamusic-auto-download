@@ -15,6 +15,30 @@ enum DownloadKind: String, Codable, Hashable {
     case file
 }
 
+enum CookieBrowser: String, CaseIterable, Identifiable, Codable {
+    case none, safari, chrome, firefox, edge, brave
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .none:    return "使わない"
+        case .safari:  return "Safari"
+        case .chrome:  return "Google Chrome"
+        case .firefox: return "Firefox"
+        case .edge:    return "Microsoft Edge"
+        case .brave:   return "Brave"
+        }
+    }
+
+    var ytDlpArgs: [String] {
+        switch self {
+        case .none: return []
+        default:    return ["--cookies-from-browser", rawValue]
+        }
+    }
+}
+
 enum FileFormat: String, CaseIterable, Codable, Identifiable, Hashable {
     case mp4Best   = "mp4-best"
     case mp4_1080  = "mp4-1080"

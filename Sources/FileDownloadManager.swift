@@ -8,7 +8,7 @@ final class FileDownloadManager: ObservableObject {
     private var process: Process?
     private var stderrBuffer = ""
 
-    func download(url: String, format: FileFormat, destination: URL) {
+    func download(url: String, format: FileFormat, destination: URL, cookieBrowser: CookieBrowser = .none) {
         guard let ytdlp = Tools.ytdlp else {
             state = .error("yt-dlp が見つかりません。`brew install yt-dlp` を実行してください")
             return
@@ -41,7 +41,7 @@ final class FileDownloadManager: ObservableObject {
             "--progress",
             "--ffmpeg-location", ffmpegDir,
             "-o", outputTemplate
-        ] + format.ytDlpArgs + [url]
+        ] + format.ytDlpArgs + cookieBrowser.ytDlpArgs + [url]
 
         let pipe = Pipe()
         p.standardOutput = pipe

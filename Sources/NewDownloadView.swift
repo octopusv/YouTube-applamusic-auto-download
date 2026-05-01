@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct NewDownloadView: View {
     @EnvironmentObject var downloader: DownloadManager
     @EnvironmentObject var history: HistoryStore
+    @EnvironmentObject var settings: AppSettings
     @Binding var selection: SidebarSelection?
 
     @State private var url: String = ""
@@ -136,7 +137,7 @@ struct NewDownloadView: View {
     private func start() {
         let trimmed = url.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        downloader.download(url: trimmed)
+        downloader.download(url: trimmed, cookieBrowser: settings.cookieBrowser)
     }
 
     private func handleEditorResult(_ result: EditorView.Result) {

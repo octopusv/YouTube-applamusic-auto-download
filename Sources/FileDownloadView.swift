@@ -193,7 +193,10 @@ struct FileDownloadView: View {
     private func start() {
         let trimmed = url.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        downloader.download(url: trimmed, format: selectedFormat, destination: destination)
+        downloader.download(url: trimmed,
+                            format: selectedFormat,
+                            destination: destination,
+                            cookieBrowser: settings.cookieBrowser)
     }
 
     private func pickFolder() {
