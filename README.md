@@ -8,9 +8,13 @@ Mac で URL を貼って ⌘↩︎、メタデータを編集して「Apple Musi
 
 ビルド済みの `.app` は [Releases](https://github.com/octopusv/YouTube-applamusic-auto-download/releases) から取得できます。
 
-1. `YTtoMusic.zip` をダウンロード・展開
-2. `YTtoMusic.app` を `/Applications` にドラッグ
-3. 初回起動は **右クリック → 開く**（署名なしのため Gatekeeper の警告が出る）
+1. `YTtoMusic.dmg` をダウンロードしてダブルクリック
+2. ウィンドウが開いたら `YTtoMusic.app` を `Applications` フォルダにドラッグ
+3. 初回起動時に「"YTtoMusic"は壊れているため開けません」と表示される場合、ターミナルで：
+   ```bash
+   xattr -cr /Applications/YTtoMusic.app
+   ```
+   を実行。これで Gatekeeper の隔離属性が外れて起動できます（署名なしアプリの仕様）
 4. 別途 `brew install yt-dlp ffmpeg` が必要
 
 自分でビルドしたい場合は下の「セットアップ」へ。
