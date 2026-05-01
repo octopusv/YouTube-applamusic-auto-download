@@ -191,13 +191,13 @@ update_appcast() {
   fi
   echo "    $sigline"
 
-  local size
-  size=$(stat -f %z "$DMG")
   local pubdate
   pubdate=$(LC_ALL=C date -u "+%a, %d %b %Y %H:%M:%S +0000")
   local notes_url="https://github.com/octopusv/YouTube-applamusic-auto-download/releases/tag/$tag"
   local dmg_url="https://github.com/octopusv/YouTube-applamusic-auto-download/releases/download/$tag/YTtoMusic.dmg"
 
+  # sign_update が "sparkle:edSignature=\"...\" length=\"...\"" を返すので
+  # length を別途付けると重複する。$sigline をそのまま流す。
   local entry
   entry=$(cat <<EOF
         <item>
@@ -210,7 +210,6 @@ update_appcast() {
                 sparkle:version="$version"
                 sparkle:shortVersionString="$version"
                 $sigline
-                length="$size"
                 type="application/octet-stream"/>
         </item>
 EOF
