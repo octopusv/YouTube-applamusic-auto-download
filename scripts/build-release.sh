@@ -51,40 +51,58 @@ xattr -cr "$APP" 2>/dev/null || true
 DMG="$ROOT/build/YTtoMusic.dmg"
 
 build_dmg() {
-  if ! command -v create-dmg >/dev/null 2>&1; then
-    echo "create-dmg が必要です。brew install create-dmg を実行してください。"
-    exit 1
-  fi
   echo "==> DMG 化"
   rm -f "$DMG"
 
-  # ステージング領域に .app だけ置く
   STAGE="$ROOT/build/dmg-stage"
   rm -rf "$STAGE"
   mkdir -p "$STAGE"
   cp -R "$APP" "$STAGE/"
+  ln -s /Applications "$STAGE/Applications"
 
-  # アイコンファイル（DMG の Volume Icon に流用）
-  ICON_PNG="$ROOT/Sources/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
-  ICON_ARG=()
-  if [[ -f "$ICON_PNG" ]]; then
-    ICON_ARG=(--volicon "$ICON_PNG")
-  fi
+  TMP_DMG="$ROOT/build/YTtoMusic.tmp.dmg"
+  rm -f "$TMP_DMG"
 
-  create-dmg \
-    --volname "YTtoMusic" \
-    "${ICON_ARG[@]}" \
-    --window-pos 200 120 \
-    --window-size 560 360 \
-    --icon-size 128 \
-    --icon "YTtoMusic.app" 150 170 \
-    --hide-extension "YTtoMusic.app" \
-    --app-drop-link 410 170 \
-    --no-internet-enable \
-    "$DMG" \
-    "$STAGE/" \
-    || true  # create-dmg は SLA がない時に exit 2 を返すことがあるため握る
+  # 書き込み可能な DMG として一旦作成
+  hdiutil create \
+    -volname "YTtoMusic" \
+    -srcfolder "$STAGE" \
+    -fs HFS+ \
+    -format UDRW \
+    -ov \
+    "$TMP_DMG" >/dev/null
 
+  # マウントしてレイアウト設定
+  MOUNT_DIR="/Volumes/YTtoMusic"
+  hdiutil attach "$TMP_DMG" -mountpoint "$MOUNT_DIR" -nobrowse -quiet
+  sleep 1
+
+  osascript <<APPLESCRIPT
+tell application "Finder"
+  tell disk "YTtoMusic"
+    open
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    set the bounds of container window to {200, 120, 760, 480}
+    set viewOptions to the icon view options of container window
+    set arrangement of viewOptions to not arranged
+    set icon size of viewOptions to 128
+    set position of item "YTtoMusic.app" of container window to {150, 180}
+    set position of item "Applications" of container window to {410, 180}
+    update without registering applications
+    delay 1
+    close
+  end tell
+end tell
+APPLESCRIPT
+
+  sync
+  hdiutil detach "$MOUNT_DIR" -quiet || hdiutil detach "$MOUNT_DIR" -force -quiet
+
+  # 圧縮された読み取り専用 DMG に変換
+  hdiutil convert "$TMP_DMG" -format UDZO -imagekey zlib-level=9 -o "$DMG" >/dev/null
+  rm -f "$TMP_DMG"
   rm -rf "$STAGE"
 
   if [[ ! -f "$DMG" ]]; then
