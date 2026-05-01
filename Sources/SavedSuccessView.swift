@@ -45,6 +45,12 @@ struct SavedSuccessView: View {
                     } label: {
                         Label("ミュージックを開く", systemImage: "music.note")
                     }
+                    Button {
+                        try? MusicLibrary.refreshCloudLibrary()
+                    } label: {
+                        Label("クラウド同期を実行", systemImage: "arrow.triangle.2.circlepath.icloud")
+                    }
+                    .help("ミュージック.app の「クラウドミュージックライブラリを更新」を叩いて iPhone への反映を早める")
                     Button("履歴で表示", action: onShowInSidebar)
                     Button {
                         onContinue()

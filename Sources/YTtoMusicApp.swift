@@ -55,6 +55,18 @@ struct YTtoMusicApp: App {
                 }
                 .keyboardShortcut("v", modifiers: [.command, .shift])
             }
+            CommandMenu("ミュージック") {
+                Button("クラウドミュージックライブラリを更新") {
+                    try? MusicLibrary.refreshCloudLibrary()
+                }
+                .keyboardShortcut("r", modifiers: [.command, .shift])
+                Button("ミュージック.app を開く") {
+                    MusicLibrary.openMusicApp()
+                }
+                Button("自動取り込みフォルダを Finder で表示") {
+                    MusicLibrary.revealAutoAddFolder()
+                }
+            }
         }
 
         Settings {

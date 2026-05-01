@@ -104,6 +104,43 @@ enum MusicLibrary {
         }
     }
 
+    /// 「ファイル → ライブラリ → クラウドミュージックライブラリを更新」を UI スクリプトで叩く。
+    /// 初回は System Events への Automation 権限ダイアログが出る。
+    /// 失敗時は throw、成功時は何も返さない（Music.app 側で進捗が表示される）。
+    static func refreshCloudLibrary() throws {
+        let script = """
+        tell application "Music" to activate
+        delay 0.4
+        tell application "System Events"
+            tell process "Music"
+                set fileMenu to (first menu bar item of menu bar 1 whose name is in {"File", "ファイル"})
+                click fileMenu
+                delay 0.2
+                set libraryItem to (first menu item of menu of fileMenu whose name is in {"Library", "ライブラリ"})
+                click libraryItem
+                delay 0.2
+                set updateItem to (first menu item of menu of libraryItem whose name is in {"Update Cloud Library", "Update iCloud Music Library", "クラウドミュージックライブラリを更新", "iCloud ミュージックライブラリを更新"})
+                click updateItem
+            end tell
+        end tell
+        """
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        p.arguments = ["-e", script]
+        let errPipe = Pipe()
+        p.standardOutput = Pipe()
+        p.standardError = errPipe
+        try p.run()
+        p.waitUntilExit()
+        guard p.terminationStatus == 0 else {
+            let data = errPipe.fileHandleForReading.readDataToEndOfFile()
+            let msg = String(data: data, encoding: .utf8) ?? "unknown"
+            throw NSError(domain: "MusicLibrary.refreshCloudLibrary",
+                          code: Int(p.terminationStatus),
+                          userInfo: [NSLocalizedDescriptionKey: msg])
+        }
+    }
+
     private static func sanitize(_ s: String) -> String {
         let invalid = CharacterSet(charactersIn: "/\\:*?\"<>|")
         return s.components(separatedBy: invalid).joined(separator: "_")
