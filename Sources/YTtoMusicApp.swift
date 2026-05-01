@@ -8,6 +8,7 @@ struct YTtoMusicApp: App {
     @StateObject private var history = HistoryStore()
     @StateObject private var settings = AppSettings()
     @StateObject private var updater = YtDlpUpdater()
+    @StateObject private var appUpdater = AppUpdater()
 
     var body: some Scene {
         Window("YT to Music", id: "main") {
@@ -25,6 +26,12 @@ struct YTtoMusicApp: App {
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 1040, height: 680)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button("アップデートを確認…") {
+                    appUpdater.checkForUpdates()
+                }
+                .disabled(!appUpdater.canCheckForUpdates)
+            }
             CommandGroup(replacing: .newItem) {
                 Button("Apple Music に追加") {
                     NotificationCenter.default.post(name: .newDownload, object: nil)

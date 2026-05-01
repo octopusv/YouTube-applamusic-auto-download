@@ -20,5 +20,13 @@
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/octopusv/YouTube-applamusic-auto-download/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>oFaP9K2hsmtyFxar41bz6oeJ0J1aoTL2mriFBRmfcyk=</string>
 </dict>
 </plist>

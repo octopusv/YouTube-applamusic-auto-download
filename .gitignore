@@ -47,3 +47,6 @@ Carthage/Build/
 # Xcode generated
 YTtoMusic.xcodeproj/
 build/
+
+# Sparkle bin tools (downloaded by build script)
+.sparkle/
