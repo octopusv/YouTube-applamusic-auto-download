@@ -251,24 +251,46 @@ if [[ "${1:-}" == "--release" ]]; then
   update_appcast "$TAG"
 
   echo "==> GitHub Release 作成: $TAG"
-  gh release create "$TAG" "$DMG" \
-    --title "$TAG" \
-    --notes "macOS 用 YTtoMusic.app
+
+  # 直前のタグからの変更点を git log で抽出（appcast 自動更新コミットは除外）
+  PREV_TAG=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || true)
+  CHANGES=""
+  if [[ -n "$PREV_TAG" ]]; then
+    CHANGES=$(git log --pretty=format:"- %s" "$PREV_TAG..HEAD" \
+      | grep -v "^- chore: appcast" \
+      | grep -v "^- chore: バージョンを" \
+      | grep -v "Co-Authored-By" \
+      || true)
+  fi
+  if [[ -z "$CHANGES" ]]; then
+    CHANGES="- （直前タグからの差分なし）"
+  fi
+
+  CHANGES_HEADER="前回のリリース以降の変更"
+  if [[ -n "$PREV_TAG" ]]; then
+    CHANGES_HEADER="$PREV_TAG からの変更"
+  fi
+
+  RELEASE_BODY="## $CHANGES_HEADER
+
+$CHANGES
 
 ## インストール
 1. \`YTtoMusic.dmg\` をダウンロードしてダブルクリック
-2. 表示されるウィンドウで YTtoMusic.app を Applications フォルダにドラッグ
-3. 初回起動は右クリック → 開く（署名なしのため Gatekeeper 警告が出る）
-   または \`xattr -cr /Applications/YTtoMusic.app\` で隔離属性を解除
+2. ウィンドウで YTtoMusic.app を Applications フォルダにドラッグ
+3. 「壊れているため開けません」と出たら:
+   \`\`\`
+   xattr -cr /Applications/YTtoMusic.app
+   \`\`\`
 
 ## 必要環境
 - macOS 14+
-- Apple Music サブスクリプション
+- Apple Music サブスクリプション（Apple Music タブ用）
 - \`brew install yt-dlp ffmpeg\`
 
-## 自動アップデート
-v0.5.0 以降は Sparkle による自動更新に対応。次回以降このような Release を作るだけで、起動中のアプリに通知が届きます。
-"
+> 既存ユーザーには Sparkle による自動アップデート通知が届きます。"
+
+  gh release create "$TAG" "$DMG" --title "$TAG" --notes "$RELEASE_BODY"
 
   echo "==> appcast.xml をコミット & push"
   git add appcast.xml
