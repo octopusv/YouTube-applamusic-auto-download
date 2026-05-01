@@ -1,0 +1,45 @@
+# Claude
+CLAUDE.md
+.claude/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+project.xcworkspace/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+Packages/
+
+# CocoaPods / Carthage (未使用だが念のため)
+Pods/
+Carthage/Build/
+
+# 一般
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
