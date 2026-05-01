@@ -23,10 +23,11 @@ final class DownloadManager: ObservableObject {
             state = .error("yt-dlp が見つかりません。`brew install yt-dlp` を実行してください")
             return
         }
-        guard Tools.ffmpeg != nil else {
+        guard let ffmpeg = Tools.ffmpeg else {
             state = .error("ffmpeg が見つかりません。`brew install ffmpeg` を実行してください")
             return
         }
+        let ffmpegDir = (ffmpeg as NSString).deletingLastPathComponent
 
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("yttomusic-\(UUID().uuidString)")
@@ -47,6 +48,7 @@ final class DownloadManager: ObservableObject {
             "--no-playlist",
             "--newline",
             "--progress",
+            "--ffmpeg-location", ffmpegDir,
             "-o", outputTemplate,
             url
         ]
