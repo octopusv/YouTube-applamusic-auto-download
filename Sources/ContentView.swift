@@ -2,8 +2,9 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var downloader: DownloadManager
+    @EnvironmentObject var fileDownloader: FileDownloadManager
     @EnvironmentObject var history: HistoryStore
-    @State private var selection: SidebarSelection? = .newDownload
+    @State private var selection: SidebarSelection? = .appleMusicDownload
 
     var body: some View {
         NavigationSplitView {
@@ -14,19 +15,36 @@ struct ContentView: View {
                 .navigationSplitViewColumnWidth(min: 560, ideal: 760)
         }
         .onChange(of: downloader.state) { _, newValue in
-            if case .ready = newValue { selection = .newDownload }
-            if case .working = newValue { selection = .newDownload }
-            if case .saving = newValue { selection = .newDownload }
-            if case .saved = newValue { selection = .newDownload }
-            if case .error = newValue { selection = .newDownload }
+            switch newValue {
+            case .working, .ready, .saving, .saved, .error:
+                selection = .appleMusicDownload
+            default: break
+            }
+        }
+        .onChange(of: fileDownloader.state) { _, newValue in
+            switch newValue {
+            case .working, .saved, .error:
+                selection = .fileDownload
+            default: break
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .newDownload)) { _ in
+            selection = .appleMusicDownload
+            downloader.reset()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .newFileDownload)) { _ in
+            selection = .fileDownload
+            fileDownloader.reset()
         }
     }
 
     @ViewBuilder
     private var detailContent: some View {
         switch selection {
-        case .none, .some(.newDownload):
+        case .none, .some(.appleMusicDownload):
             NewDownloadView(selection: $selection)
+        case .some(.fileDownload):
+            FileDownloadView(selection: $selection)
         case .some(.history(let id)):
             if let item = history.item(id: id) {
                 HistoryDetailView(item: item, selection: $selection)

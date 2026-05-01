@@ -17,32 +17,51 @@ struct HistoryDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
+        .toolbar { toolbarContent }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItemGroup(placement: .primaryAction) {
+            switch item.kind {
+            case .appleMusic:
                 Button {
                     MusicLibrary.openMusicApp()
                 } label: {
                     Label("ミュージックで開く", systemImage: "music.note")
                 }
-
-                Menu {
-                    Button("URL をコピー") {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(item.url, forType: .string)
+            case .file:
+                if let path = item.savedFilePath, FileManager.default.fileExists(atPath: path) {
+                    Button {
+                        NSWorkspace.shared.open(URL(fileURLWithPath: path))
+                    } label: {
+                        Label("開く", systemImage: "play.fill")
                     }
-                    if let path = item.savedFilePath {
-                        Button("ファイルを Finder で表示") {
-                            NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
-                        }
+                    Button {
+                        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+                    } label: {
+                        Label("Finder で表示", systemImage: "folder")
                     }
-                    Divider()
-                    Button("履歴から削除", role: .destructive) {
-                        selection = .newDownload
-                        history.delete(item)
-                    }
-                } label: {
-                    Label("その他", systemImage: "ellipsis.circle")
                 }
+            }
+
+            Menu {
+                Button("URL をコピー") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(item.url, forType: .string)
+                }
+                if item.kind == .appleMusic, let path = item.savedFilePath {
+                    Button("Finder で表示") {
+                        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+                    }
+                }
+                Divider()
+                Button("履歴から削除", role: .destructive) {
+                    selection = .appleMusicDownload
+                    history.delete(item)
+                }
+            } label: {
+                Label("その他", systemImage: "ellipsis.circle")
             }
         }
     }
@@ -52,12 +71,15 @@ struct HistoryDetailView: View {
             ArtworkView(path: item.thumbnailPath, size: 220, corner: 14)
 
             VStack(alignment: .leading, spacing: 8) {
+                kindBadge
                 Text(item.title)
                     .font(.title.weight(.semibold))
                     .lineLimit(3)
-                Text(item.artist)
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
+                if !item.artist.isEmpty {
+                    Text(item.artist)
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                }
                 if !item.album.isEmpty {
                     Text(item.album)
                         .font(.callout)
@@ -66,6 +88,26 @@ struct HistoryDetailView: View {
                 Spacer(minLength: 0)
             }
             Spacer(minLength: 0)
+        }
+    }
+
+    @ViewBuilder
+    private var kindBadge: some View {
+        switch item.kind {
+        case .appleMusic:
+            Label("Apple Music", systemImage: "music.note.house.fill")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.pink)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(.pink.opacity(0.12), in: Capsule())
+        case .file:
+            Label(item.formatLabel ?? "ファイル", systemImage: "arrow.down.doc.fill")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.blue)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(.blue.opacity(0.12), in: Capsule())
         }
     }
 

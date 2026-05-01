@@ -60,49 +60,15 @@ build_dmg() {
   cp -R "$APP" "$STAGE/"
   ln -s /Applications "$STAGE/Applications"
 
-  TMP_DMG="$ROOT/build/YTtoMusic.tmp.dmg"
-  rm -f "$TMP_DMG"
-
-  # 書き込み可能な DMG として一旦作成
   hdiutil create \
     -volname "YTtoMusic" \
     -srcfolder "$STAGE" \
     -fs HFS+ \
-    -format UDRW \
+    -format UDZO \
+    -imagekey zlib-level=9 \
     -ov \
-    "$TMP_DMG" >/dev/null
+    "$DMG" >/dev/null
 
-  # マウントしてレイアウト設定
-  MOUNT_DIR="/Volumes/YTtoMusic"
-  hdiutil attach "$TMP_DMG" -mountpoint "$MOUNT_DIR" -nobrowse -quiet
-  sleep 1
-
-  osascript <<APPLESCRIPT
-tell application "Finder"
-  tell disk "YTtoMusic"
-    open
-    set current view of container window to icon view
-    set toolbar visible of container window to false
-    set statusbar visible of container window to false
-    set the bounds of container window to {200, 120, 760, 480}
-    set viewOptions to the icon view options of container window
-    set arrangement of viewOptions to not arranged
-    set icon size of viewOptions to 128
-    set position of item "YTtoMusic.app" of container window to {150, 180}
-    set position of item "Applications" of container window to {410, 180}
-    update without registering applications
-    delay 1
-    close
-  end tell
-end tell
-APPLESCRIPT
-
-  sync
-  hdiutil detach "$MOUNT_DIR" -quiet || hdiutil detach "$MOUNT_DIR" -force -quiet
-
-  # 圧縮された読み取り専用 DMG に変換
-  hdiutil convert "$TMP_DMG" -format UDZO -imagekey zlib-level=9 -o "$DMG" >/dev/null
-  rm -f "$TMP_DMG"
   rm -rf "$STAGE"
 
   if [[ ! -f "$DMG" ]]; then

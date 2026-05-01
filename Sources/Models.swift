@@ -10,8 +10,72 @@ struct VideoMetadata: Equatable {
     let mp3Path: String
 }
 
+enum DownloadKind: String, Codable, Hashable {
+    case appleMusic
+    case file
+}
+
+enum FileFormat: String, CaseIterable, Codable, Identifiable, Hashable {
+    case mp4Best   = "mp4-best"
+    case mp4_1080  = "mp4-1080"
+    case mp4_720   = "mp4-720"
+    case mp4_480   = "mp4-480"
+    case mp3       = "mp3"
+    case m4a       = "m4a"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .mp4Best:  return "MP4 最高画質"
+        case .mp4_1080: return "MP4 1080p"
+        case .mp4_720:  return "MP4 720p"
+        case .mp4_480:  return "MP4 480p"
+        case .mp3:      return "MP3 (高音質)"
+        case .m4a:      return "M4A (高音質)"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .mp4Best, .mp4_1080, .mp4_720, .mp4_480: return "film"
+        case .mp3, .m4a: return "music.note"
+        }
+    }
+
+    var fileExtension: String {
+        switch self {
+        case .mp4Best, .mp4_1080, .mp4_720, .mp4_480: return "mp4"
+        case .mp3: return "mp3"
+        case .m4a: return "m4a"
+        }
+    }
+
+    var ytDlpArgs: [String] {
+        switch self {
+        case .mp4Best:
+            return ["-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+                    "--merge-output-format", "mp4"]
+        case .mp4_1080:
+            return ["-f", "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]/best",
+                    "--merge-output-format", "mp4"]
+        case .mp4_720:
+            return ["-f", "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best",
+                    "--merge-output-format", "mp4"]
+        case .mp4_480:
+            return ["-f", "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best",
+                    "--merge-output-format", "mp4"]
+        case .mp3:
+            return ["-x", "--audio-format", "mp3", "--audio-quality", "0"]
+        case .m4a:
+            return ["-x", "--audio-format", "m4a", "--audio-quality", "0"]
+        }
+    }
+}
+
 struct HistoryItem: Codable, Identifiable, Hashable {
     let id: UUID
+    let kind: DownloadKind
     let url: String
     let title: String
     let artist: String
@@ -19,6 +83,43 @@ struct HistoryItem: Codable, Identifiable, Hashable {
     let savedAt: Date
     let thumbnailPath: String?
     let savedFilePath: String?
+    let formatLabel: String?
+
+    init(id: UUID,
+         kind: DownloadKind = .appleMusic,
+         url: String,
+         title: String,
+         artist: String,
+         album: String,
+         savedAt: Date,
+         thumbnailPath: String?,
+         savedFilePath: String?,
+         formatLabel: String? = nil) {
+        self.id = id
+        self.kind = kind
+        self.url = url
+        self.title = title
+        self.artist = artist
+        self.album = album
+        self.savedAt = savedAt
+        self.thumbnailPath = thumbnailPath
+        self.savedFilePath = savedFilePath
+        self.formatLabel = formatLabel
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        kind = (try? c.decode(DownloadKind.self, forKey: .kind)) ?? .appleMusic
+        url = try c.decode(String.self, forKey: .url)
+        title = try c.decode(String.self, forKey: .title)
+        artist = (try? c.decode(String.self, forKey: .artist)) ?? ""
+        album = (try? c.decode(String.self, forKey: .album)) ?? ""
+        savedAt = try c.decode(Date.self, forKey: .savedAt)
+        thumbnailPath = try c.decodeIfPresent(String.self, forKey: .thumbnailPath)
+        savedFilePath = try c.decodeIfPresent(String.self, forKey: .savedFilePath)
+        formatLabel = try c.decodeIfPresent(String.self, forKey: .formatLabel)
+    }
 }
 
 enum DownloadStage: Equatable {
@@ -39,8 +140,16 @@ enum DownloadState: Equatable {
     case error(String)
 }
 
+enum FileDownloadState: Equatable {
+    case idle
+    case working(stage: DownloadStage, status: String)
+    case saved(HistoryItem)
+    case error(String)
+}
+
 enum SidebarSelection: Hashable {
-    case newDownload
+    case appleMusicDownload
+    case fileDownload
     case history(UUID)
 }
 
