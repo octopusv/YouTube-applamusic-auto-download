@@ -9,6 +9,11 @@ final class FileDownloadManager: ObservableObject {
     private var stderrBuffer = ""
 
     func download(url: String, format: FileFormat, destination: URL, cookieBrowser: CookieBrowser = .none) {
+        guard let validatedURL = Sanitization.validateHTTPURL(url) else {
+            state = .error("URL が不正です。http(s) スキームの URL を入力してください")
+            return
+        }
+        let safeURL = validatedURL.absoluteString
         guard let ytdlp = Tools.ytdlp else {
             state = .error("yt-dlp が見つかりません。`brew install yt-dlp` を実行してください")
             return
@@ -41,7 +46,7 @@ final class FileDownloadManager: ObservableObject {
             "--progress",
             "--ffmpeg-location", ffmpegDir,
             "-o", outputTemplate
-        ] + format.ytDlpArgs + cookieBrowser.ytDlpArgs + [url]
+        ] + format.ytDlpArgs + cookieBrowser.ytDlpArgs + ["--", safeURL]
 
         p.environment = Tools.augmentedEnvironment()
 
@@ -183,8 +188,7 @@ final class FileDownloadManager: ObservableObject {
     }
 
     private func sanitize(_ s: String) -> String {
-        let invalid = CharacterSet(charactersIn: "/\\:*?\"<>|")
-        return s.components(separatedBy: invalid).joined(separator: "_")
+        Sanitization.filename(s)
     }
 
     private func uniquePath(_ url: URL) -> URL {

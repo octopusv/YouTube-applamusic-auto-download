@@ -47,11 +47,15 @@ enum FileTagEditor {
         }
 
         let albumArtistValue = albumArtist ?? artist
+        let cleanTitle = Sanitization.metadata(title)
+        let cleanArtist = Sanitization.metadata(artist)
+        let cleanAlbum = Sanitization.metadata(album)
+        let cleanAlbumArtist = Sanitization.metadata(albumArtistValue)
         args += [
-            "-metadata", "title=\(title)",
-            "-metadata", "artist=\(artist)",
-            "-metadata", "album=\(album)",
-            "-metadata", "album_artist=\(albumArtistValue)",
+            "-metadata", "title=\(cleanTitle)",
+            "-metadata", "artist=\(cleanArtist)",
+            "-metadata", "album=\(cleanAlbum)",
+            "-metadata", "album_artist=\(cleanAlbumArtist)",
             tempOut.path
         ]
 

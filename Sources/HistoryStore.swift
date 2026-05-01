@@ -33,7 +33,8 @@ final class HistoryStore: ObservableObject {
     }
 
     func delete(_ item: HistoryItem) {
-        if let path = item.thumbnailPath {
+        if let path = item.thumbnailPath,
+           Sanitization.isPath(path, within: AppPaths.thumbsDir) {
             try? FileManager.default.removeItem(atPath: path)
         }
         items.removeAll { $0.id == item.id }
@@ -43,7 +44,9 @@ final class HistoryStore: ObservableObject {
     func update(_ updated: HistoryItem) {
         guard let idx = items.firstIndex(where: { $0.id == updated.id }) else { return }
         let old = items[idx]
-        if let oldThumb = old.thumbnailPath, oldThumb != updated.thumbnailPath {
+        if let oldThumb = old.thumbnailPath,
+           oldThumb != updated.thumbnailPath,
+           Sanitization.isPath(oldThumb, within: AppPaths.thumbsDir) {
             try? FileManager.default.removeItem(atPath: oldThumb)
         }
         items[idx] = updated
@@ -55,7 +58,7 @@ final class HistoryStore: ObservableObject {
     }
 
     nonisolated static func persistThumbnail(from src: String?) -> String? {
-        guard let src else { return nil }
+        guard let src, Sanitization.isLikelyImage(at: src) else { return nil }
         let dest = AppPaths.thumbsDir.appendingPathComponent("\(UUID().uuidString).jpg")
         do {
             try FileManager.default.copyItem(atPath: src, toPath: dest.path)

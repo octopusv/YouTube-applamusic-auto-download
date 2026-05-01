@@ -86,8 +86,26 @@ enum MusicLibraryEditor {
         return outStr
     }
 
+    /// AppleScript の `"..."` 文字列リテラルへ安全に埋め込むためのエスケープ。
+    /// `\` `"` をエスケープし、改行/タブは AppleScript のエスケープ表記へ、
+    /// その他の制御文字（NUL 含む）と U+2028/U+2029 は除去する。
+    /// Sanitization.metadata で先に NFC 正規化と長さ上限を適用する。
     private static func escape(_ s: String) -> String {
-        s.replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "\"", with: "\\\"")
+        let normalized = Sanitization.metadata(s)
+        var out = ""
+        out.reserveCapacity(normalized.count)
+        for scalar in normalized.unicodeScalars {
+            switch scalar {
+            case "\\": out += "\\\\"
+            case "\"": out += "\\\""
+            case "\n": out += "\\n"
+            case "\r": out += "\\r"
+            case "\t": out += "\\t"
+            default:
+                if scalar.value < 0x20 || scalar.value == 0x7F { continue }
+                out.unicodeScalars.append(scalar)
+            }
+        }
+        return out
     }
 }

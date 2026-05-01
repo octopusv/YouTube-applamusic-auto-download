@@ -52,11 +52,15 @@ enum MusicLibrary {
         }
 
         let resolvedAlbumArtist = albumArtist ?? artist
+        let cleanTitle = Sanitization.metadata(title)
+        let cleanArtist = Sanitization.metadata(artist)
+        let cleanAlbum = Sanitization.metadata(album)
+        let cleanAlbumArtist = Sanitization.metadata(resolvedAlbumArtist)
         args += [
-            "-metadata", "title=\(title)",
-            "-metadata", "artist=\(artist)",
-            "-metadata", "album=\(album)",
-            "-metadata", "album_artist=\(resolvedAlbumArtist)"
+            "-metadata", "title=\(cleanTitle)",
+            "-metadata", "artist=\(cleanArtist)",
+            "-metadata", "album=\(cleanAlbum)",
+            "-metadata", "album_artist=\(cleanAlbumArtist)"
         ]
 
         if let trackNumber, let totalTracks {
@@ -88,10 +92,23 @@ enum MusicLibrary {
         } else {
             baseName = sanitize("\(artist) - \(title)")
         }
-        let dest = AppPaths.autoAddFolder.appendingPathComponent("\(baseName).mp3")
-        try? FileManager.default.removeItem(at: dest)
+        let initialDest = AppPaths.autoAddFolder.appendingPathComponent("\(baseName).mp3")
+        let dest = uniquePath(initialDest)
         try FileManager.default.moveItem(at: tempOut, to: dest)
         return dest
+    }
+
+    private static func uniquePath(_ url: URL) -> URL {
+        guard FileManager.default.fileExists(atPath: url.path) else { return url }
+        let base = url.deletingPathExtension().lastPathComponent
+        let ext = url.pathExtension
+        let dir = url.deletingLastPathComponent()
+        var i = 2
+        while true {
+            let candidate = dir.appendingPathComponent("\(base) (\(i)).\(ext)")
+            if !FileManager.default.fileExists(atPath: candidate.path) { return candidate }
+            i += 1
+        }
     }
 
     static func revealAutoAddFolder() {
@@ -169,7 +186,6 @@ enum MusicLibrary {
     }
 
     private static func sanitize(_ s: String) -> String {
-        let invalid = CharacterSet(charactersIn: "/\\:*?\"<>|")
-        return s.components(separatedBy: invalid).joined(separator: "_")
+        Sanitization.filename(s)
     }
 }

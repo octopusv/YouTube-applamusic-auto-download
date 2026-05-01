@@ -16,6 +16,11 @@ final class PlaylistDownloadManager: ObservableObject {
         cancelled = false
         currentProcess = nil
 
+        guard let validatedURL = Sanitization.validateHTTPURL(url) else {
+            state = .error("URL が不正です。http(s) スキームの URL を入力してください")
+            return
+        }
+        let safeURL = validatedURL.absoluteString
         guard let ytdlp = Tools.ytdlp else {
             state = .error("yt-dlp が見つかりません")
             return
@@ -28,7 +33,7 @@ final class PlaylistDownloadManager: ObservableObject {
 
         state = .fetching
 
-        guard let info = await fetchPlaylistInfo(url: url, ytdlp: ytdlp, cookieBrowser: cookieBrowser) else {
+        guard let info = await fetchPlaylistInfo(url: safeURL, ytdlp: ytdlp, cookieBrowser: cookieBrowser) else {
             state = .error("プレイリスト情報の取得に失敗")
             return
         }
@@ -126,7 +131,7 @@ final class PlaylistDownloadManager: ObservableObject {
                     "--dump-single-json",
                     "--yes-playlist",
                     "--no-warnings"
-                ] + cookieBrowser.ytDlpArgs + [url]
+                ] + cookieBrowser.ytDlpArgs + ["--", url]
                 p.environment = Tools.augmentedEnvironment()
 
                 let pipe = Pipe()
@@ -204,7 +209,7 @@ final class PlaylistDownloadManager: ObservableObject {
             "--no-warnings",
             "--ffmpeg-location", ffmpegDir,
             "-o", outputTemplate
-        ] + cookieBrowser.ytDlpArgs + [entry.watchURL]
+        ] + cookieBrowser.ytDlpArgs + ["--", entry.watchURL]
 
         try await runProcessTrackingProgress(executable: ytdlp, arguments: args, current: trackNumber, total: totalTracks, title: entry.title)
 

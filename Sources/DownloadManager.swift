@@ -19,6 +19,11 @@ final class DownloadManager: ObservableObject {
     private var previewEmitted = false
 
     func download(url: String, cookieBrowser: CookieBrowser = .none) {
+        guard let validatedURL = Sanitization.validateHTTPURL(url) else {
+            state = .error("URL が不正です。http(s) スキームの URL を入力してください")
+            return
+        }
+        let safeURL = validatedURL.absoluteString
         guard let ytdlp = Tools.ytdlp else {
             state = .error("yt-dlp が見つかりません。`brew install yt-dlp` を実行してください")
             return
@@ -50,7 +55,7 @@ final class DownloadManager: ObservableObject {
             "--progress",
             "--ffmpeg-location", ffmpegDir,
             "-o", outputTemplate
-        ] + cookieBrowser.ytDlpArgs + [url]
+        ] + cookieBrowser.ytDlpArgs + ["--", safeURL]
 
         p.environment = Tools.augmentedEnvironment()
 

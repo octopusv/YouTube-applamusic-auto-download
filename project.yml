@@ -13,8 +13,8 @@ packages:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.7.2"
-    CURRENT_PROJECT_VERSION: "13"
+    MARKETING_VERSION: "0.7.3"
+    CURRENT_PROJECT_VERSION: "14"
     PRODUCT_NAME: YTtoMusic
     GENERATE_INFOPLIST_FILE: YES
     DEVELOPMENT_TEAM: ""
@@ -46,5 +46,5 @@ targets:
         SUFeedURL: "https://raw.githubusercontent.com/octopusv/YouTube-applamusic-auto-download/main/appcast.xml"
         SUPublicEDKey: "oFaP9K2hsmtyFxar41bz6oeJ0J1aoTL2mriFBRmfcyk="
         SUEnableAutomaticChecks: true
-        SUEnableInstallerLauncherService: true
+        SUEnableInstallerLauncherService: false
         NSAppleEventsUsageDescription: "ミュージックライブラリの曲情報（タイトル・アーティスト・アルバム・アートワーク）を編集するために、ミュージック.app を操作します。"
