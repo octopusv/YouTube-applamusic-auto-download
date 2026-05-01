@@ -60,15 +60,89 @@ build_dmg() {
   cp -R "$APP" "$STAGE/"
   ln -s /Applications "$STAGE/Applications"
 
+  TMP_DMG="$ROOT/build/YTtoMusic.tmp.dmg"
+  rm -f "$TMP_DMG"
+
   hdiutil create \
     -volname "YTtoMusic" \
     -srcfolder "$STAGE" \
     -fs HFS+ \
-    -format UDZO \
-    -imagekey zlib-level=9 \
+    -format UDRW \
     -ov \
-    "$DMG" >/dev/null
+    "$TMP_DMG" >/dev/null
 
+  MOUNT_DIR="/Volumes/YTtoMusic"
+
+  # 既存の同名マウントが残っていれば外す
+  if mount | grep -q "$MOUNT_DIR"; then
+    diskutil unmount force "$MOUNT_DIR" >/dev/null 2>&1 \
+      || diskutil eject "$MOUNT_DIR" >/dev/null 2>&1 \
+      || true
+    sleep 1
+  fi
+
+  hdiutil attach "$TMP_DMG" -mountpoint "$MOUNT_DIR" -nobrowse -noautoopen -quiet
+
+  # アイテム認識待ち
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    if [[ -e "$MOUNT_DIR/YTtoMusic.app" && -L "$MOUNT_DIR/Applications" ]]; then
+      break
+    fi
+    sleep 0.5
+  done
+  sleep 1
+
+  /usr/bin/osascript <<APPLESCRIPT >/dev/null 2>&1 || true
+tell application "Finder"
+  tell disk "YTtoMusic"
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    set sidebar width of container window to 0
+    set the bounds of container window to {200, 120, 760, 480}
+    set viewOptions to the icon view options of container window
+    set arrangement of viewOptions to not arranged
+    set icon size of viewOptions to 128
+    set text size of viewOptions to 12
+    delay 0.5
+    try
+      set position of item "YTtoMusic.app" of container window to {150, 180}
+    end try
+    try
+      set position of item "Applications" of container window to {410, 180}
+    end try
+    delay 0.5
+    update without registering applications
+    delay 0.5
+    close container window
+  end tell
+end tell
+APPLESCRIPT
+
+  # Finder に手を引かせる
+  /usr/bin/osascript -e 'tell application "Finder" to eject disk "YTtoMusic"' >/dev/null 2>&1 || true
+
+  sync
+  sleep 1
+
+  # 念のため複数手段でアンマウント
+  for attempt in 1 2 3; do
+    if ! mount | grep -q "$MOUNT_DIR"; then break; fi
+    hdiutil detach "$MOUNT_DIR" -quiet >/dev/null 2>&1 \
+      || hdiutil detach "$MOUNT_DIR" -force -quiet >/dev/null 2>&1 \
+      || diskutil unmount force "$MOUNT_DIR" >/dev/null 2>&1 \
+      || true
+    sleep 1
+  done
+
+  if mount | grep -q "$MOUNT_DIR"; then
+    echo "警告: ボリュームを取り出せませんでした。再起動するか、手動で取り出してから再実行してください。"
+    exit 1
+  fi
+
+  # 圧縮された読み取り専用 DMG に変換
+  hdiutil convert "$TMP_DMG" -format UDZO -imagekey zlib-level=9 -o "$DMG" >/dev/null
+  rm -f "$TMP_DMG"
   rm -rf "$STAGE"
 
   if [[ ! -f "$DMG" ]]; then
