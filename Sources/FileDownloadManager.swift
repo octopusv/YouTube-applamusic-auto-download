@@ -43,6 +43,8 @@ final class FileDownloadManager: ObservableObject {
             "-o", outputTemplate
         ] + format.ytDlpArgs + cookieBrowser.ytDlpArgs + [url]
 
+        p.environment = Tools.augmentedEnvironment()
+
         let pipe = Pipe()
         p.standardOutput = pipe
         p.standardError = pipe

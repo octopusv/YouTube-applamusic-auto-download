@@ -127,6 +127,7 @@ final class PlaylistDownloadManager: ObservableObject {
                     "--yes-playlist",
                     "--no-warnings"
                 ] + cookieBrowser.ytDlpArgs + [url]
+                p.environment = Tools.augmentedEnvironment()
 
                 let pipe = Pipe()
                 p.standardOutput = pipe
@@ -272,6 +273,7 @@ final class PlaylistDownloadManager: ObservableObject {
             let p = Process()
             p.executableURL = URL(fileURLWithPath: executable)
             p.arguments = arguments
+            p.environment = Tools.augmentedEnvironment()
 
             let pipe = Pipe()
             p.standardOutput = pipe

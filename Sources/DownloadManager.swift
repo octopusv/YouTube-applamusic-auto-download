@@ -52,6 +52,8 @@ final class DownloadManager: ObservableObject {
             "-o", outputTemplate
         ] + cookieBrowser.ytDlpArgs + [url]
 
+        p.environment = Tools.augmentedEnvironment()
+
         let pipe = Pipe()
         p.standardOutput = pipe
         p.standardError = pipe

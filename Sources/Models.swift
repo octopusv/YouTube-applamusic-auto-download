@@ -198,6 +198,16 @@ enum Tools {
     }
     static var ytdlp: String? { find("yt-dlp") }
     static var ffmpeg: String? { find("ffmpeg") }
+
+    /// GUI から起動された .app の PATH には Homebrew が含まれないため、
+    /// yt-dlp/ffmpeg/deno 等が連携するときに必要な PATH を補強する
+    static func augmentedEnvironment() -> [String: String] {
+        var env = ProcessInfo.processInfo.environment
+        let homebrewPaths = "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/opt/local/bin"
+        let existing = env["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+        env["PATH"] = "\(homebrewPaths):\(existing)"
+        return env
+    }
 }
 
 enum AppPaths {
