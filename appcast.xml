@@ -125,5 +125,17 @@
                 sparkle:edSignature="5+eo0+76PX5lJXqYFdD8OQWLC8TBJmmboYK8PjiZJpHuDXg/oS+G4G2haxz+RhtRgxT0YbkcDalprxX3Lhh0BA==" length="3736602"
                 type="application/octet-stream"/>
         </item>
+        <item>
+            <title>v0.8.2</title>
+            <pubDate>Sat, 02 May 2026 04:44:22 +0000</pubDate>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:releaseNotesLink>https://github.com/octopusv/YTtoMusic/releases/tag/v0.8.2</sparkle:releaseNotesLink>
+            <enclosure
+                url="https://github.com/octopusv/YTtoMusic/releases/download/v0.8.2/YTtoMusic.dmg"
+                sparkle:version="17"
+                sparkle:shortVersionString="0.8.2"
+                sparkle:edSignature="1VUfgYJeYgj9ft6tqS+bVbQlXJCiL6sVQ87xWEk7Fq0kojHI8x8Z/gIdcnloj5/Cw5kNoHPV/8NeWXGv0/XIBw==" length="3736544"
+                type="application/octet-stream"/>
+        </item>
     </channel>
 </rss>
