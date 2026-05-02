@@ -13,15 +13,23 @@ struct CreateAlbumView: View {
     @State private var saving = false
     @State private var error: String?
     @State private var feedback: String?
+    @State private var search: String = ""
 
     private var candidates: [HistoryItem] {
-        history.items.filter { $0.kind == .appleMusic }
+        let all = history.items.filter { $0.kind == .appleMusic }
+        let q = search.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !q.isEmpty else { return all }
+        return all.filter { item in
+            item.title.lowercased().contains(q)
+                || item.artist.lowercased().contains(q)
+                || item.album.lowercased().contains(q)
+        }
     }
 
     private var selectedItems: [HistoryItem] {
-        let order = candidates
-        let set = selected
-        return order.filter { set.contains($0.id) }
+        // 検索フィルタに依存せず、選択順を保つために全候補から拾う
+        let all = history.items.filter { $0.kind == .appleMusic }
+        return all.filter { selected.contains($0.id) }
     }
 
     private var artwork: String? {
@@ -58,20 +66,42 @@ struct CreateAlbumView: View {
             HStack {
                 Text("曲を選択").font(.headline)
                 Spacer()
-                Text("\(selected.count) / \(candidates.count) 選択中")
+                Text("\(selected.count) 選択中")
                     .font(.caption).foregroundStyle(.secondary)
                 Button("全解除") { selected.removeAll() }
                     .buttonStyle(.link).font(.caption)
                     .disabled(selected.isEmpty)
             }
-            .padding(.horizontal, 16).padding(.vertical, 10)
+            .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 6)
+
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("タイトル・アーティスト・アルバムで検索", text: $search)
+                    .textFieldStyle(.plain)
+                if !search.isEmpty {
+                    Button {
+                        search = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(Color(NSColor.textBackgroundColor).opacity(0.6),
+                        in: RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.2), lineWidth: 0.5))
+            .padding(.horizontal, 16).padding(.bottom, 10)
 
             Divider()
 
             if candidates.isEmpty {
                 VStack(spacing: 8) {
-                    Image(systemName: "music.note").font(.largeTitle).foregroundStyle(.tertiary)
-                    Text("Apple Music に追加した履歴がありません")
+                    Image(systemName: search.isEmpty ? "music.note" : "magnifyingglass")
+                        .font(.largeTitle).foregroundStyle(.tertiary)
+                    Text(search.isEmpty ? "Apple Music に追加した履歴がありません" : "該当する曲がありません")
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -10,14 +10,26 @@ struct AddTracksToAlbumView: View {
     @State private var selected: Set<UUID> = []
     @State private var saving = false
     @State private var error: String?
+    @State private var search: String = ""
 
-    private var candidates: [HistoryItem] {
+    private var allCandidates: [HistoryItem] {
         let existingIDs = Set(album.items.map(\.id))
         return history.items.filter { $0.kind == .appleMusic && !existingIDs.contains($0.id) }
     }
 
+    private var candidates: [HistoryItem] {
+        let q = search.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !q.isEmpty else { return allCandidates }
+        return allCandidates.filter { item in
+            item.title.lowercased().contains(q)
+                || item.artist.lowercased().contains(q)
+                || item.album.lowercased().contains(q)
+        }
+    }
+
     private var selectedItems: [HistoryItem] {
-        candidates.filter { selected.contains($0.id) }
+        // 検索フィルタに依存せず選択順を保つ
+        allCandidates.filter { selected.contains($0.id) }
     }
 
     var body: some View {
@@ -36,14 +48,37 @@ struct AddTracksToAlbumView: View {
                     .buttonStyle(.link).font(.caption)
                     .disabled(selected.isEmpty)
             }
-            .padding(.horizontal, 24).padding(.bottom, 8)
+            .padding(.horizontal, 24).padding(.bottom, 6)
+
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("タイトル・アーティスト・アルバムで検索", text: $search)
+                    .textFieldStyle(.plain)
+                if !search.isEmpty {
+                    Button {
+                        search = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(Color(NSColor.textBackgroundColor).opacity(0.6),
+                        in: RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.2), lineWidth: 0.5))
+            .padding(.horizontal, 24).padding(.bottom, 10)
 
             Divider()
 
             if candidates.isEmpty {
                 VStack(spacing: 8) {
-                    Image(systemName: "tray").font(.largeTitle).foregroundStyle(.tertiary)
-                    Text("追加できる曲がありません").font(.callout).foregroundStyle(.secondary)
+                    Image(systemName: search.isEmpty ? "tray" : "magnifyingglass")
+                        .font(.largeTitle).foregroundStyle(.tertiary)
+                    Text(search.isEmpty ? "追加できる曲がありません" : "該当する曲がありません")
+                        .font(.callout).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
