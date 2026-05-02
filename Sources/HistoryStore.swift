@@ -57,6 +57,34 @@ final class HistoryStore: ObservableObject {
         items.first { $0.id == id }
     }
 
+    /// Apple Music 取り込み済みでアルバム名を持つ曲だけを、アルバム名で束ねて返す。
+    /// アルバム名昇順、各アルバム内は savedAt 昇順（取り込み順 = 元のトラック順を温存）。
+    var albums: [AlbumGroup] {
+        let appleMusicWithAlbum = items.filter { $0.kind == .appleMusic && !$0.album.isEmpty }
+        let grouped = Dictionary(grouping: appleMusicWithAlbum) { $0.album }
+        return grouped
+            .map { name, items -> AlbumGroup in
+                let sorted = items.sorted { $0.savedAt < $1.savedAt }
+                return AlbumGroup(
+                    name: name,
+                    albumArtist: sorted.first?.artist ?? "",
+                    items: sorted
+                )
+            }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    func album(named name: String) -> AlbumGroup? {
+        albums.first { $0.name == name }
+    }
+
+    /// 同じ id を持つ既存アイテムを置き換える（複数件の一括反映）。
+    func bulkUpdate(_ updates: [HistoryItem]) {
+        let map = Dictionary(uniqueKeysWithValues: updates.map { ($0.id, $0) })
+        items = items.map { map[$0.id] ?? $0 }
+        save()
+    }
+
     nonisolated static func persistThumbnail(from src: String?) -> String? {
         guard let src, Sanitization.isLikelyImage(at: src) else { return nil }
         let dest = AppPaths.thumbsDir.appendingPathComponent("\(UUID().uuidString).jpg")

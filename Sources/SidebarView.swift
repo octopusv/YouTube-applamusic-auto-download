@@ -3,6 +3,7 @@ import SwiftUI
 struct SidebarView: View {
     @EnvironmentObject var history: HistoryStore
     @Binding var selection: SidebarSelection?
+    @State private var albumsExpanded = true
 
     var body: some View {
         List(selection: $selection) {
@@ -30,6 +31,27 @@ struct SidebarView: View {
                         .foregroundStyle(.purple)
                 }
                 .tag(SidebarSelection.playlistDownload)
+            }
+
+            if !history.albums.isEmpty || history.items.contains(where: { $0.kind == .appleMusic }) {
+                Section {
+                    DisclosureGroup(isExpanded: $albumsExpanded) {
+                        ForEach(history.albums) { album in
+                            AlbumSidebarRow(album: album)
+                                .tag(SidebarSelection.album(album.name))
+                        }
+                        Label {
+                            Text("新規アルバムを作成…").foregroundStyle(.secondary)
+                        } icon: {
+                            Image(systemName: "plus.circle")
+                                .foregroundStyle(.secondary)
+                        }
+                        .tag(SidebarSelection.createAlbum)
+                    } label: {
+                        Label("アルバム", systemImage: "rectangle.stack.fill")
+                            .foregroundStyle(.purple)
+                    }
+                }
             }
 
             ForEach(history.grouped, id: \.group) { group in
@@ -71,6 +93,22 @@ struct SidebarView: View {
         .listStyle(.sidebar)
         .searchable(text: $history.searchText, placement: .sidebar, prompt: "履歴を検索")
         .navigationTitle("YT to Music")
+    }
+}
+
+private struct AlbumSidebarRow: View {
+    let album: AlbumGroup
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ArtworkView(path: album.coverThumbnailPath, size: 32, corner: 4)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(album.name).font(.body).lineLimit(1)
+                Text("\(album.items.count) 曲・\(album.albumArtist)")
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
+        }
+        .padding(.vertical, 2)
     }
 }
 

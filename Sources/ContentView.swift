@@ -80,6 +80,10 @@ struct ContentView: View {
             } else {
                 ContentUnavailable()
             }
+        case .some(.album(let name)):
+            AlbumDetailView(albumName: name, selection: $selection)
+        case .some(.createAlbum):
+            CreateAlbumView(selection: $selection)
         }
     }
 }

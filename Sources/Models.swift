@@ -185,6 +185,17 @@ enum SidebarSelection: Hashable {
     case fileDownload
     case playlistDownload
     case history(UUID)
+    case album(String)
+    case createAlbum
+}
+
+/// 履歴に存在する Apple Music 取り込み済み曲を、アルバム名で束ねたグループ。
+struct AlbumGroup: Identifiable, Hashable {
+    let name: String
+    let albumArtist: String
+    let items: [HistoryItem]
+    var id: String { name }
+    var coverThumbnailPath: String? { items.first?.thumbnailPath }
 }
 
 enum Tools {
