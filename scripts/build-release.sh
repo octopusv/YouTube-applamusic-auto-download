@@ -202,8 +202,8 @@ update_appcast() {
 
   local pubdate
   pubdate=$(LC_ALL=C date -u "+%a, %d %b %Y %H:%M:%S +0000")
-  local notes_url="https://github.com/octopusv/YouTube-applamusic-auto-download/releases/tag/$tag"
-  local dmg_url="https://github.com/octopusv/YouTube-applamusic-auto-download/releases/download/$tag/YTtoMusic.dmg"
+  local notes_url="https://github.com/octopusv/YTtoMusic/releases/tag/$tag"
+  local dmg_url="https://github.com/octopusv/YTtoMusic/releases/download/$tag/YTtoMusic.dmg"
 
   # sign_update が "sparkle:edSignature=\"...\" length=\"...\"" を返すので
   # length を別途付けると重複する。$sigline をそのまま流す。

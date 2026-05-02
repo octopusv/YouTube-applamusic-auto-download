@@ -27,7 +27,7 @@
 	<key>SUEnableInstallerLauncherService</key>
 	<false/>
 	<key>SUFeedURL</key>
-	<string>https://raw.githubusercontent.com/octopusv/YouTube-applamusic-auto-download/main/appcast.xml</string>
+	<string>https://raw.githubusercontent.com/octopusv/YTtoMusic/main/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>oFaP9K2hsmtyFxar41bz6oeJ0J1aoTL2mriFBRmfcyk=</string>
 </dict>

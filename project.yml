@@ -43,7 +43,7 @@ targets:
       path: Info.plist
       properties:
         LSMinimumSystemVersion: "14.0"
-        SUFeedURL: "https://raw.githubusercontent.com/octopusv/YouTube-applamusic-auto-download/main/appcast.xml"
+        SUFeedURL: "https://raw.githubusercontent.com/octopusv/YTtoMusic/main/appcast.xml"
         SUPublicEDKey: "oFaP9K2hsmtyFxar41bz6oeJ0J1aoTL2mriFBRmfcyk="
         SUEnableAutomaticChecks: true
         SUEnableInstallerLauncherService: false

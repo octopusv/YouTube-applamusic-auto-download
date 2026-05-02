@@ -62,7 +62,7 @@ struct SettingsView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Link("GitHub", destination: URL(string: "https://github.com/octopusv/YouTube-applamusic-auto-download")!)
+            Link("GitHub", destination: URL(string: "https://github.com/octopusv/YTtoMusic")!)
         }
         .padding(28)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
