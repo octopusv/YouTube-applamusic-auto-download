@@ -10,6 +10,7 @@ struct YTtoMusicApp: App {
     @StateObject private var settings = AppSettings()
     @StateObject private var updater = YtDlpUpdater()
     @StateObject private var appUpdater = AppUpdater()
+    @StateObject private var accessibilityNotice = AccessibilityNotice()
 
     var body: some Scene {
         Window("YT to Music", id: "main") {
@@ -20,6 +21,7 @@ struct YTtoMusicApp: App {
                 .environmentObject(history)
                 .environmentObject(settings)
                 .environmentObject(updater)
+                .environmentObject(accessibilityNotice)
                 .frame(minWidth: 880, minHeight: 580)
                 .task {
                     updater.checkOnLaunch()

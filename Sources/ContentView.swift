@@ -26,6 +26,8 @@ struct ContentView: View {
             VStack(spacing: 0) {
                 UpdateBanner()
                     .animation(.smooth(duration: 0.25), value: bannerKey)
+                AccessibilityBanner()
+                    .animation(.smooth(duration: 0.25), value: bannerKey)
                 detailContent
             }
             .navigationSplitViewColumnWidth(min: 560, ideal: 760)
