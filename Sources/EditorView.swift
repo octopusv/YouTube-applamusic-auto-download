@@ -12,6 +12,8 @@ struct EditorView: View {
     let metadata: VideoMetadata
     let onResult: (Result) -> Void
 
+    @EnvironmentObject var history: HistoryStore
+
     @State private var title: String = ""
     @State private var artist: String = ""
     @State private var album: String = ""
@@ -20,9 +22,23 @@ struct EditorView: View {
     @State private var error: String?
     @State private var artworkHover = false
 
+    @State private var targetAlbumName: String = ""
+
     private var effectiveArtwork: String? {
-        customArtworkPath ?? metadata.thumbnailPath
+        if let chosen = selectedExistingAlbum {
+            return chosen.coverThumbnailPath ?? customArtworkPath ?? metadata.thumbnailPath
+        }
+        return customArtworkPath ?? metadata.thumbnailPath
     }
+
+    private var availableAlbums: [AlbumGroup] { history.albums }
+
+    private var selectedExistingAlbum: AlbumGroup? {
+        guard !targetAlbumName.isEmpty else { return nil }
+        return availableAlbums.first { $0.name == targetAlbumName }
+    }
+
+    private var isAppendingToExisting: Bool { selectedExistingAlbum != nil }
 
     var body: some View {
         ScrollView {
@@ -72,7 +88,7 @@ struct EditorView: View {
         VStack(spacing: 10) {
             ZStack {
                 ArtworkView(path: effectiveArtwork, size: 200)
-                if artworkHover {
+                if artworkHover && !isAppendingToExisting {
                     RoundedRectangle(cornerRadius: Theme.artworkCorner)
                         .fill(.black.opacity(0.45))
                         .frame(width: 200, height: 200)
@@ -87,9 +103,17 @@ struct EditorView: View {
             }
             .onHover { artworkHover = $0 }
             .animation(.easeOut(duration: 0.15), value: artworkHover)
-            .onDrop(of: [.image, .fileURL], isTargeted: nil, perform: handleArtworkDrop)
+            .onDrop(of: [.image, .fileURL], isTargeted: nil) { providers in
+                guard !isAppendingToExisting else { return false }
+                return handleArtworkDrop(providers)
+            }
 
-            if customArtworkPath != nil {
+            if isAppendingToExisting {
+                Text("既存アルバムのアートワークが適用されます")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            } else if customArtworkPath != nil {
                 Button("元のサムネに戻す") {
                     customArtworkPath = nil
                 }
@@ -101,16 +125,43 @@ struct EditorView: View {
 
     private var formColumn: some View {
         VStack(alignment: .leading, spacing: 0) {
+            LabeledRow(label: "追加先") {
+                Picker("", selection: $targetAlbumName) {
+                    Text("新しいアルバムを作る").tag("")
+                    if !availableAlbums.isEmpty {
+                        Divider()
+                        ForEach(availableAlbums) { a in
+                            Text("\(a.name) (\(a.items.count) 曲)").tag(a.name)
+                        }
+                    }
+                }
+                .labelsHidden()
+                .onChange(of: targetAlbumName) { _, newValue in
+                    if let chosen = availableAlbums.first(where: { $0.name == newValue }) {
+                        album = chosen.name
+                        artist = chosen.albumArtist
+                    }
+                }
+            }
+            Divider().padding(.vertical, 10)
             LabeledRow(label: "タイトル") {
                 TextField("", text: $title).textFieldStyle(.roundedBorder)
             }
             Divider().padding(.vertical, 10)
             LabeledRow(label: "アーティスト") {
                 TextField("", text: $artist).textFieldStyle(.roundedBorder)
+                    .disabled(isAppendingToExisting)
             }
             Divider().padding(.vertical, 10)
             LabeledRow(label: "アルバム") {
                 TextField("", text: $album).textFieldStyle(.roundedBorder)
+                    .disabled(isAppendingToExisting)
+            }
+            if isAppendingToExisting, let chosen = selectedExistingAlbum {
+                Text("「\(chosen.name)」の末尾に \(chosen.items.count + 1) 曲目として追加されます")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 8)
             }
             if let dur = formatDuration(metadata.duration) {
                 Divider().padding(.vertical, 10)
@@ -134,10 +185,10 @@ struct EditorView: View {
                 save()
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "music.note.house.fill")
-                    Text(saving ? "追加中…" : "Apple Music に追加")
+                    Image(systemName: isAppendingToExisting ? "rectangle.stack.badge.plus" : "music.note.house.fill")
+                    Text(saving ? "追加中…" : (isAppendingToExisting ? "アルバムに追加" : "Apple Music に追加"))
                 }
-                .frame(minWidth: 160)
+                .frame(minWidth: 180)
             }
             .controlSize(.large)
             .buttonStyle(.borderedProminent)
@@ -150,18 +201,36 @@ struct EditorView: View {
         saving = true
         error = nil
         onResult(.startSaving)
+
+        let existing = selectedExistingAlbum
         let snapshot = (title: title, artist: artist, album: album,
                         url: metadata.url, mp3: metadata.mp3Path,
                         thumb: effectiveArtwork)
 
         Task.detached(priority: .userInitiated) {
             do {
+                let trackNumber: Int?
+                let totalTracks: Int?
+                let albumArtist: String?
+                if let existing {
+                    trackNumber = existing.items.count + 1
+                    totalTracks = existing.items.count + 1
+                    albumArtist = existing.albumArtist.isEmpty ? nil : existing.albumArtist
+                } else {
+                    trackNumber = nil
+                    totalTracks = nil
+                    albumArtist = nil
+                }
+
                 let dest = try MusicLibrary.save(
                     mp3Source: snapshot.mp3,
                     thumbnail: snapshot.thumb,
                     title: snapshot.title,
                     artist: snapshot.artist,
-                    album: snapshot.album
+                    album: snapshot.album,
+                    albumArtist: albumArtist,
+                    trackNumber: trackNumber,
+                    totalTracks: totalTracks
                 )
                 let savedThumb = HistoryStore.persistThumbnail(from: snapshot.thumb)
                 let item = HistoryItem(
@@ -174,6 +243,19 @@ struct EditorView: View {
                     thumbnailPath: savedThumb,
                     savedFilePath: dest.path
                 )
+
+                if let existing, !existing.items.isEmpty {
+                    let existingPairs = existing.items.map { (oldTitle: $0.title, oldArtist: $0.artist) }
+                    _ = try? MusicLibraryEditor.assignToAlbum(
+                        tracks: existingPairs,
+                        album: existing.name,
+                        albumArtist: existing.albumArtist.isEmpty ? nil : existing.albumArtist,
+                        artworkPath: nil,
+                        startTrackNumber: 1,
+                        totalTracks: existing.items.count + 1
+                    )
+                }
+
                 await MainActor.run { onResult(.saved(item)) }
             } catch {
                 await MainActor.run {

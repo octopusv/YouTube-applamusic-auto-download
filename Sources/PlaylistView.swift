@@ -11,7 +11,17 @@ struct PlaylistView: View {
     @State private var albumName: String = ""
     @State private var albumArtist: String = ""
     @State private var fixArtist: Bool = true
+    @State private var targetExistingAlbumName: String = ""
     @FocusState private var urlFocused: Bool
+
+    private var availableAlbums: [AlbumGroup] { history.albums }
+
+    private var selectedExistingAlbum: AlbumGroup? {
+        guard !targetExistingAlbumName.isEmpty else { return nil }
+        return availableAlbums.first { $0.name == targetExistingAlbumName }
+    }
+
+    private var isAppendingToExisting: Bool { selectedExistingAlbum != nil }
 
     var body: some View {
         ZStack {
@@ -54,25 +64,57 @@ struct PlaylistView: View {
                 header
 
                 VStack(alignment: .leading, spacing: 16) {
-                    field("アルバム名") {
-                        TextField("例: Greatest Hits", text: $albumName).textFieldStyle(.roundedBorder)
+                    field("追加先") {
+                        Picker("", selection: $targetExistingAlbumName) {
+                            Text("新しいアルバムを作る").tag("")
+                            if !availableAlbums.isEmpty {
+                                Divider()
+                                ForEach(availableAlbums) { a in
+                                    Text("\(a.name) (\(a.items.count) 曲)").tag(a.name)
+                                }
+                            }
+                        }
+                        .labelsHidden()
                     }
 
                     Divider()
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Toggle(isOn: $fixArtist) {
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text("アーティストを固定").font(.callout)
-                                Text(fixArtist ? "全トラックを同じアーティスト名に統一" : "動画ごとのチャンネル名をそのまま使う")
-                                    .font(.caption).foregroundStyle(.secondary)
+                    if isAppendingToExisting, let chosen = selectedExistingAlbum {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 10) {
+                                ArtworkView(path: chosen.coverThumbnailPath, size: 44, corner: 6)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(chosen.name).font(.callout.weight(.semibold)).lineLimit(1)
+                                    Text("\(chosen.albumArtist) ・ \(chosen.items.count) 曲")
+                                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                }
+                                Spacer(minLength: 0)
                             }
+                            Text("プレイリストの各動画は \(chosen.items.count + 1) 曲目から追記され、既存トラックの曲数表示も更新されます。")
+                                .font(.caption).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                        if fixArtist {
-                            field("アーティスト名") {
-                                TextField("例: The Beatles", text: $albumArtist).textFieldStyle(.roundedBorder)
+                    } else {
+                        field("アルバム名") {
+                            TextField("例: Greatest Hits", text: $albumName).textFieldStyle(.roundedBorder)
+                        }
+
+                        Divider()
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Toggle(isOn: $fixArtist) {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text("アーティストを固定").font(.callout)
+                                    Text(fixArtist ? "全トラックを同じアーティスト名に統一" : "動画ごとのチャンネル名をそのまま使う")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
                             }
-                            .padding(.leading, 0)
+                            if fixArtist {
+                                field("アーティスト名") {
+                                    TextField("例: The Beatles", text: $albumArtist).textFieldStyle(.roundedBorder)
+                                }
+                                .padding(.leading, 0)
+                            }
                         }
                     }
                 }
@@ -92,7 +134,7 @@ struct PlaylistView: View {
             Label("プレイリスト → アルバム", systemImage: "rectangle.stack.badge.plus")
                 .font(.title2.weight(.semibold))
                 .labelStyle(.titleAndIcon)
-            Text("YouTube プレイリスト全体を 1 つのアルバムとして Apple Music に追加します。")
+            Text("YouTube プレイリスト全体を 1 つのアルバムとして Apple Music に追加します。既存アルバムへの追記も選べます。")
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
@@ -206,7 +248,7 @@ struct PlaylistView: View {
                     }
                     Button {
                         manager.reset()
-                        url = ""; albumName = ""; albumArtist = ""
+                        url = ""; albumName = ""; albumArtist = ""; targetExistingAlbumName = ""
                     } label: {
                         Label("続けて別のプレイリスト", systemImage: "plus")
                     }
@@ -278,8 +320,12 @@ struct PlaylistView: View {
     private var canStart: Bool {
         guard case .idle = manager.state else { return false }
         let trimmedURL = url.trimmingCharacters(in: .whitespaces)
+        guard !trimmedURL.isEmpty else { return false }
+        if isAppendingToExisting {
+            return true
+        }
         let trimmedAlbum = albumName.trimmingCharacters(in: .whitespaces)
-        guard !trimmedURL.isEmpty, !trimmedAlbum.isEmpty else { return false }
+        guard !trimmedAlbum.isEmpty else { return false }
         if fixArtist && albumArtist.trimmingCharacters(in: .whitespaces).isEmpty { return false }
         return true
     }
@@ -298,16 +344,36 @@ struct PlaylistView: View {
     private func start() {
         guard canStart else { return }
         let u = url.trimmingCharacters(in: .whitespaces)
-        let album = albumName.trimmingCharacters(in: .whitespaces)
-        let fixed = fixArtist ? albumArtist.trimmingCharacters(in: .whitespaces) : nil
-        Task {
-            await manager.start(
-                url: u,
-                albumName: album,
-                fixedAlbumArtist: fixed,
-                cookieBrowser: settings.cookieBrowser,
-                history: history
+
+        if let chosen = selectedExistingAlbum {
+            let ctx = ExistingAlbumContext(
+                name: chosen.name,
+                albumArtist: chosen.albumArtist,
+                coverArtPath: chosen.coverThumbnailPath,
+                existingTracks: chosen.items.map { (title: $0.title, artist: $0.artist) }
             )
+            Task {
+                await manager.start(
+                    url: u,
+                    albumName: chosen.name,
+                    fixedAlbumArtist: chosen.albumArtist.isEmpty ? nil : chosen.albumArtist,
+                    cookieBrowser: settings.cookieBrowser,
+                    history: history,
+                    appendingTo: ctx
+                )
+            }
+        } else {
+            let album = albumName.trimmingCharacters(in: .whitespaces)
+            let fixed = fixArtist ? albumArtist.trimmingCharacters(in: .whitespaces) : nil
+            Task {
+                await manager.start(
+                    url: u,
+                    albumName: album,
+                    fixedAlbumArtist: fixed,
+                    cookieBrowser: settings.cookieBrowser,
+                    history: history
+                )
+            }
         }
     }
 

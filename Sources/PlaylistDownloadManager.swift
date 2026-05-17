@@ -1,6 +1,15 @@
 import Foundation
 import Combine
 
+/// プレイリストを既存アルバムへ追記するときの追加情報。
+struct ExistingAlbumContext {
+    let name: String
+    let albumArtist: String
+    let coverArtPath: String?
+    let existingTracks: [(title: String, artist: String)]
+    var existingCount: Int { existingTracks.count }
+}
+
 @MainActor
 final class PlaylistDownloadManager: ObservableObject {
     @Published var state: PlaylistDownloadState = .idle
@@ -12,7 +21,8 @@ final class PlaylistDownloadManager: ObservableObject {
                albumName: String,
                fixedAlbumArtist: String?,
                cookieBrowser: CookieBrowser,
-               history: HistoryStore) async {
+               history: HistoryStore,
+               appendingTo existing: ExistingAlbumContext? = nil) async {
         cancelled = false
         currentProcess = nil
 
@@ -44,27 +54,38 @@ final class PlaylistDownloadManager: ObservableObject {
 
         var succeeded = 0
         var failed: [String] = []
-        var sharedAlbumArt: String?
-        let total = info.entries.count
+        // 既存アルバムへの追記時はそのカバーアートを優先使用
+        var sharedAlbumArt: String? = existing?.coverArtPath
+        let newCount = info.entries.count
+        let baseOffset = existing?.existingCount ?? 0
+        let totalAfter = baseOffset + newCount
+
+        let resolvedAlbumName = existing?.name ?? albumName
+        let resolvedFixedArtist: String?
+        if let existing {
+            resolvedFixedArtist = existing.albumArtist.isEmpty ? fixedAlbumArtist : existing.albumArtist
+        } else {
+            resolvedFixedArtist = fixedAlbumArtist
+        }
 
         for (index, entry) in info.entries.enumerated() {
             if cancelled {
-                state = .cancelled(succeeded: succeeded, total: total)
+                state = .cancelled(succeeded: succeeded, total: newCount)
                 return
             }
 
             state = .downloading(current: index + 1,
-                                 total: total,
+                                 total: newCount,
                                  currentTitle: entry.title,
                                  currentProgress: 0)
 
             do {
                 let item = try await downloadOne(
                     entry: entry,
-                    trackNumber: index + 1,
-                    totalTracks: total,
-                    albumName: albumName,
-                    fixedAlbumArtist: fixedAlbumArtist,
+                    trackNumber: baseOffset + index + 1,
+                    totalTracks: totalAfter,
+                    albumName: resolvedAlbumName,
+                    fixedAlbumArtist: resolvedFixedArtist,
                     fallbackAlbumArtist: info.uploader,
                     sharedAlbumArt: &sharedAlbumArt,
                     ytdlp: ytdlp,
@@ -78,8 +99,21 @@ final class PlaylistDownloadManager: ObservableObject {
             }
         }
 
+        // 既存アルバム追記モードでは既存トラックの track count も新しい total に揃える
+        if let existing, !existing.existingTracks.isEmpty, succeeded > 0 {
+            let pairs = existing.existingTracks.map { (oldTitle: $0.title, oldArtist: $0.artist) }
+            _ = try? MusicLibraryEditor.assignToAlbum(
+                tracks: pairs,
+                album: existing.name,
+                albumArtist: existing.albumArtist.isEmpty ? nil : existing.albumArtist,
+                artworkPath: nil,
+                startTrackNumber: 1,
+                totalTracks: totalAfter
+            )
+        }
+
         if cancelled {
-            state = .cancelled(succeeded: succeeded, total: total)
+            state = .cancelled(succeeded: succeeded, total: newCount)
         } else {
             state = .finished(succeeded: succeeded, failed: failed)
         }
