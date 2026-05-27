@@ -6,6 +6,7 @@ struct YTtoMusicApp: App {
     @StateObject private var downloader = DownloadManager()
     @StateObject private var fileDownloader = FileDownloadManager()
     @StateObject private var playlistManager = PlaylistDownloadManager()
+    @StateObject private var importer = LocalImportManager()
     @StateObject private var history = HistoryStore()
     @StateObject private var settings = AppSettings()
     @StateObject private var updater = YtDlpUpdater()
@@ -18,6 +19,7 @@ struct YTtoMusicApp: App {
                 .environmentObject(downloader)
                 .environmentObject(fileDownloader)
                 .environmentObject(playlistManager)
+                .environmentObject(importer)
                 .environmentObject(history)
                 .environmentObject(settings)
                 .environmentObject(updater)
@@ -51,6 +53,10 @@ struct YTtoMusicApp: App {
                     NotificationCenter.default.post(name: .newPlaylist, object: nil)
                 }
                 .keyboardShortcut("n", modifiers: [.command, .option])
+                Button("ローカルから追加") {
+                    NotificationCenter.default.post(name: .newLocalImport, object: nil)
+                }
+                .keyboardShortcut("o", modifiers: .command)
             }
             CommandGroup(after: .pasteboard) {
                 Button("URL をペーストして開始") {
@@ -91,5 +97,6 @@ extension Notification.Name {
     static let newDownload = Notification.Name("YTtoMusic.newDownload")
     static let newFileDownload = Notification.Name("YTtoMusic.newFileDownload")
     static let newPlaylist = Notification.Name("YTtoMusic.newPlaylist")
+    static let newLocalImport = Notification.Name("YTtoMusic.newLocalImport")
     static let pasteAndStart = Notification.Name("YTtoMusic.pasteAndStart")
 }

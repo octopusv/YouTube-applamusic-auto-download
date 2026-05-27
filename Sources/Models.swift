@@ -184,9 +184,24 @@ enum SidebarSelection: Hashable {
     case appleMusicDownload
     case fileDownload
     case playlistDownload
+    case localImport
     case history(UUID)
     case album(String)
     case createAlbum
+}
+
+/// ローカルファイル取り込みの状態。複数ファイルはキューで 1 曲ずつ処理し、
+/// `.editing` で EditorView を再利用してメタデータを確認・保存する。
+enum LocalImportState: Equatable {
+    case idle
+    /// 音声抽出/変換・タグ読み取り中（index / total は 1 始まり）
+    case preparing(fileName: String, index: Int, total: Int)
+    /// 編集 UI 表示中。残りキュー件数を remaining に持つ
+    case editing(metadata: VideoMetadata, index: Int, total: Int, remaining: Int)
+    case saving
+    /// 1 曲保存完了。remaining が 0 なら全件完了
+    case saved(item: HistoryItem, remaining: Int)
+    case error(String)
 }
 
 /// 履歴に存在する Apple Music 取り込み済み曲を、アルバム名で束ねたグループ。
@@ -209,6 +224,12 @@ enum Tools {
     }
     static var ytdlp: String? { find("yt-dlp") }
     static var ffmpeg: String? { find("ffmpeg") }
+    static var ffprobe: String? { find("ffprobe") }
+
+    /// ローカル取り込みで受け付ける音声拡張子（小文字）
+    static let audioExtensions: Set<String> = ["mp3", "m4a", "aac", "wav", "aiff", "aif", "flac", "alac", "ogg", "oga", "opus", "wma"]
+    /// ローカル取り込みで受け付ける動画拡張子（小文字、音声を抽出して取り込む）
+    static let videoExtensions: Set<String> = ["mp4", "mov", "m4v", "mkv", "avi", "webm", "flv", "wmv", "mpg", "mpeg", "3gp", "ts"]
 
     /// GUI から起動された .app の PATH には Homebrew が含まれないため、
     /// yt-dlp/ffmpeg/deno 等が連携するときに必要な PATH を補強する

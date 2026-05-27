@@ -31,6 +31,14 @@ struct SidebarView: View {
                         .foregroundStyle(.purple)
                 }
                 .tag(SidebarSelection.playlistDownload)
+
+                Label {
+                    Text("ローカルから追加")
+                } icon: {
+                    Image(systemName: "square.and.arrow.down.on.square.fill")
+                        .foregroundStyle(.teal)
+                }
+                .tag(SidebarSelection.localImport)
             }
 
             if !history.albums.isEmpty || history.items.contains(where: { $0.kind == .appleMusic }) {

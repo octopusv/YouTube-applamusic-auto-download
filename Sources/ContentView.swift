@@ -4,6 +4,7 @@ struct ContentView: View {
     @EnvironmentObject var downloader: DownloadManager
     @EnvironmentObject var fileDownloader: FileDownloadManager
     @EnvironmentObject var playlistManager: PlaylistDownloadManager
+    @EnvironmentObject var importer: LocalImportManager
     @EnvironmentObject var history: HistoryStore
     @EnvironmentObject var updater: YtDlpUpdater
     @State private var selection: SidebarSelection? = .appleMusicDownload
@@ -53,6 +54,13 @@ struct ContentView: View {
             default: break
             }
         }
+        .onChange(of: importer.state) { _, newValue in
+            switch newValue {
+            case .preparing, .editing, .saving, .saved, .error:
+                selection = .localImport
+            default: break
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .newDownload)) { _ in
             selection = .appleMusicDownload
             downloader.reset()
@@ -65,6 +73,10 @@ struct ContentView: View {
             selection = .playlistDownload
             playlistManager.reset()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .newLocalImport)) { _ in
+            selection = .localImport
+            importer.reset()
+        }
     }
 
     @ViewBuilder
@@ -76,6 +88,8 @@ struct ContentView: View {
             FileDownloadView(selection: $selection)
         case .some(.playlistDownload):
             PlaylistView(selection: $selection)
+        case .some(.localImport):
+            LocalImportView(selection: $selection)
         case .some(.history(let id)):
             if let item = history.item(id: id) {
                 HistoryDetailView(item: item, selection: $selection)
